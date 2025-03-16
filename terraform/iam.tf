@@ -36,28 +36,28 @@ resource "aws_iam_role_policy_attachment" "attach_lambda_s3_policy" {
   role       = aws_iam_role.lambda_exec_role.name
 }
 
-#Allow IAM User to Upload to the lambda_code_bucket & Lamba to read from it
+
+# Data source to fetch current account info
+data "aws_caller_identity" "current" {}
+
+# Policy: Allow Terraform IAM Role & Lambda to Read/Write to S3
 resource "aws_s3_bucket_policy" "lambda_code_policy" {
   bucket = aws_s3_bucket.lambda_code_bucket.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
+        Effect    = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/Fidelisesq" 
-        },
-        Action    = ["s3:PutObject"],
-        Resource  = "${aws_s3_bucket.lambda_code_bucket.arn}/*"
-      },
-      {
-        Effect    = "Allow",
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole" 
-        },
-        Action    = ["s3:GetObject"],
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/Fidelisesq",  
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole"  # Lambda Execution Role ARN
+          ]
+        }
+        Action    = ["s3:GetObject", "s3:PutObject"]
         Resource  = "${aws_s3_bucket.lambda_code_bucket.arn}/*"
       }
     ]
   })
 }
+
