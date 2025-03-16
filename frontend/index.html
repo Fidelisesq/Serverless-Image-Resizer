@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Serverless Image Resizer</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css"
+        rel="stylesheet">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+</head>
+<body>
+
+<div class="col-lg-8 mx-auto p-4 py-md-5">
+  <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+    <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
+      <span class="fs-5"><i class="bi bi-images fs-4"></i> Serverless Image Resizer</span>
+    </a>
+  </header>
+
+  <!-- Configuration Section -->
+  <section>
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-gear"></i> Configuration
+      </div>
+      <div class="card-body">
+        <h5 class="card-text">Set the Lambda Function URLs here</h5>
+        <form id="configForm">
+          <div class="mb-3">
+            <label class="form-label">Function URL for <code>presign</code> Lambda</label>
+            <input type="text" class="form-control" id="functionUrlPresign"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Function URL for <code>list</code> Lambda</label>
+            <input type="text" class="form-control" id="functionUrlList"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Function URL for <code>delete</code> Lambda</label>
+            <input type="text" class="form-control" id="functionUrlDelete"/>
+          </div>
+          <div class="mb-3">
+            <button type="submit" name="load" class="btn btn-primary">Load from API</button>
+            <button type="submit" name="save" class="btn btn-success">Save</button>
+            <button type="submit" name="clear" class="btn btn-secondary">Clear</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upload Section -->
+  <section class="mt-4">
+    <h1 class="h4">Upload Your Image <i class="bi bi-cloud-upload"></i></h1>
+    <hr>
+    <div class="card">
+      <div class="card-header">Upload Form</div>
+      <div class="card-body">
+        <p>
+          Select an image to upload. The image will be resized automatically. You can choose different resize options.
+        </p>
+        <form id="uploadForm">
+          <div class="mb-3">
+            <label class="form-label">Select your file:</label>
+            <input type="file" class="form-control" id="customFile" name="file" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Resize Option:</label>
+            <select class="form-select" id="resizeOption">
+              <option value="400x400">400x400 (Default)</option>
+              <option value="800x800">800x800</option>
+              <option value="1200x1200">1200x1200</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <button type="submit" class="btn btn-primary">
+              Upload <i class="bi bi-cloud-upload-fill"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- List Images Section -->
+  <section class="mt-4">
+    <div class="row">
+      <div class="col">
+        <h1 class="h4">Uploaded Images <i class="bi bi-image"></i></h1>
+      </div>
+      <div class="col text-end">
+        <button class="btn btn-primary" id="updateImageListButton">Refresh</button>
+      </div>
+    </div>
+    <p class="mt-2">
+      The uploaded images will be displayed below, including their resized versions. Click "Refresh" to update.
+    </p>
+    <hr>
+    <div id="imagesContainer"></div>
+  </section>
+
+  <footer class="pt-5 my-5 text-muted border-top">
+    Created by Fidelis - &copy; 2025
+  </footer>
+</div>
+
+<!-- Handlebars Template for Image List -->
+<script id="image-item-template" type="text/x-handlebars-template">
+  <div class="card mt-3">
+    <div class="card-header">
+      {{Name}}
+      <button onclick="deleteImage('{{Name}}')" class="btn btn-danger btn-sm float-end">
+        Delete <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    <div class="row">
+      <div class="col-auto">
+        <img src="{{Resized.URL}}" class="img-fluid" alt="{{Name}}">
+      </div>
+      <div class="col">
+        <div class="card-body">
+          <p><b>{{Name}}</b></p>
+          <p>Timestamp: {{Timestamp}}</p>
+          <p><a href="{{Original.URL}}" target="_blank">Original ({{Original.Size}} bytes)</a></p>
+          <p><a href="{{Resized.URL}}" target="_blank">Resized ({{Resized.Size}} bytes)</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"
+        crossorigin="anonymous"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

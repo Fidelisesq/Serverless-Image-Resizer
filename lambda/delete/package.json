@@ -1,0 +1,8 @@
+{
+    "name": "delete",
+    "version": "1.0.0",
+    "dependencies": {
+      "aws-sdk": "^2.1043.0"
+    }
+  }
+  
