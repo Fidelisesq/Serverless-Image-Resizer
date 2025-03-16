@@ -51,6 +51,7 @@ resource "null_resource" "lambda_zip" {
 
 # Lambda Functions (Presign, Resize, List, Delete)
 resource "aws_lambda_function" "presign" {
+  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
   function_name    = "presign"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -67,6 +68,7 @@ resource "aws_lambda_function" "presign" {
 }
 
 resource "aws_lambda_function" "resize" {
+  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
   function_name    = "resize"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -84,6 +86,7 @@ resource "aws_lambda_function" "resize" {
 }
 
 resource "aws_lambda_function" "list" {
+  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
   function_name    = "list"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -100,6 +103,7 @@ resource "aws_lambda_function" "list" {
 }
 
 resource "aws_lambda_function" "delete" {
+  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
   function_name    = "delete"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
