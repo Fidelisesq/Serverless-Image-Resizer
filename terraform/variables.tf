@@ -11,7 +11,7 @@ variable "frontend_domain_name" {
 
 variable "acm_certificate_arn" {
     description = "Domain Name"
-    type=  string
+    type =  string
 }
 
 
