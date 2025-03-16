@@ -50,3 +50,24 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
     ]
   })
 }
+
+# S3 Bucket for Lambda Deployment Packages
+resource "aws_s3_bucket" "lambda_code" {
+  bucket = "lambda-code-bucket-foz"
+}
+
+# Policy: Allow Terraform IAM Role & Lambda to Read Objects
+resource "aws_s3_bucket_policy" "lambda_code_policy" {
+  bucket = aws_s3_bucket.lambda_code.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = ["s3:GetObject", "s3:PutObject"],
+        Resource  = "${aws_s3_bucket.lambda_code.arn}/*"
+      }
+    ]
+  })
+}

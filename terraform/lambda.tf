@@ -3,7 +3,7 @@ resource "aws_lambda_function" "presign" {
   handler         = "index.handler"
   runtime         = "nodejs18.x"
   role            = aws_iam_role.lambda_exec_role.arn
-  s3_bucket       = "lambda-code-bucket"
+  s3_bucket       = var.lambda_code_bucket
   s3_key          = "presign.zip"
   timeout         = 10
 
@@ -19,7 +19,7 @@ resource "aws_lambda_function" "resize" {
   handler         = "index.handler"
   runtime         = "nodejs18.x"
   role            = aws_iam_role.lambda_exec_role.arn
-  s3_bucket       = "lambda-code-bucket"
+  s3_bucket       = var.lambda_code_bucket
   s3_key          = "resize.zip"
   timeout         = 10
 
@@ -36,7 +36,7 @@ resource "aws_lambda_function" "list" {
   handler         = "index.handler"
   runtime         = "nodejs18.x"
   role            = aws_iam_role.lambda_exec_role.arn
-  s3_bucket       = "lambda-code-bucket"
+  s3_bucket       = var.lambda_code_bucket
   s3_key          = "list.zip"
   timeout         = 10
 
@@ -52,7 +52,7 @@ resource "aws_lambda_function" "delete" {
   handler         = "index.handler"
   runtime         = "nodejs18.x"
   role            = aws_iam_role.lambda_exec_role.arn
-  s3_bucket       = "lambda-code-bucket"
+  s3_bucket       = var.lambda_code_bucket
   s3_key          = "delete.zip"
   timeout         = 10
 
