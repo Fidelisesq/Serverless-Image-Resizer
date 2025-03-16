@@ -69,7 +69,7 @@ resource "aws_s3_bucket_public_access_block" "lambda_code_bucket_block" {
 
 # Policy: Allow Terraform IAM Role & Lambda to Read Objects
 resource "aws_s3_bucket_policy" "lambda_code_policy" {
-  bucket = aws_s3_bucket.lambda_code.id
+  bucket = aws_s3_bucket.lambda_code_bucket.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
