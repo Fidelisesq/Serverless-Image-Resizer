@@ -77,7 +77,7 @@ resource "aws_s3_bucket_policy" "lambda_code_policy" {
         Effect    = "Allow",
         Principal = "*",
         Action    = ["s3:GetObject", "s3:PutObject"],
-        Resource  = "${aws_s3_bucket.lambda_code.arn}/*"
+        Resource  = "${aws_s3_bucket.lambda_code_bucket.arn}/*"
       }
     ]
   })
