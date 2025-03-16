@@ -4,22 +4,22 @@ resource "null_resource" "lambda_zip" {
 
   provisioner "local-exec" {
     command = "zip -r presign.zip ./lambda/presign"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "zip -r resize.zip ./lambda/resize"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "zip -r list.zip ./lambda/list"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "zip -r delete.zip ./lambda/delete"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
