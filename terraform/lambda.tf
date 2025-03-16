@@ -3,51 +3,49 @@ resource "null_resource" "lambda_zip" {
   depends_on = [aws_s3_bucket.lambda_code_bucket]
 
   provisioner "local-exec" {
-    command = "zip -r presign.zip ./lambda/presign"
+    command = "zip -r presign.zip ./lambda/presign/*"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r resize.zip ./lambda/resize"
+    command = "zip -r resize.zip ./lambda/resize/*"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r list.zip ./lambda/list"
+    command = "zip -r list.zip ./lambda/list/*"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r delete.zip ./lambda/delete"
+    command = "zip -r delete.zip ./lambda/delete/*"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "aws s3 cp presign.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/presign.zip"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "aws s3 cp resize.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/resize.zip"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "aws s3 cp list.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/list.zip"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
     command = "aws s3 cp delete.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/delete.zip"
-    working_dir = "${path.module}/lambda"
+    working_dir = "${path.module}/../lambda"
   }
 
   triggers = {
     always_run = "${timestamp()}"
   }
 }
-
-
 
 # Lambda Functions (Presign, Resize, List, Delete)
 resource "aws_lambda_function" "presign" {
