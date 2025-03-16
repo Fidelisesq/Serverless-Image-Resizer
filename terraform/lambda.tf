@@ -3,22 +3,22 @@ resource "null_resource" "lambda_zip" {
   depends_on = [aws_s3_bucket.lambda_code_bucket]
 
   provisioner "local-exec" {
-    command = "zip -r presign.zip ./lambda/presign/*"
+    command = "zip -r presign.zip ./lambda/presign/* || true"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r resize.zip ./lambda/resize/*"
+    command = "zip -r resize.zip ./lambda/resize/* || true"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r list.zip ./lambda/list/*"
+    command = "zip -r list.zip ./lambda/list/* || true"
     working_dir = "${path.module}/../lambda"
   }
 
   provisioner "local-exec" {
-    command = "zip -r delete.zip ./lambda/delete/*"
+    command = "zip -r delete.zip ./lambda/delete/* || true"
     working_dir = "${path.module}/../lambda"
   }
 
