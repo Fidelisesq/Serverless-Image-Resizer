@@ -51,10 +51,21 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
   })
 }
 
-# S3 Bucket for Lambda Deployment Packages
-resource "aws_s3_bucket" "lambda_code" {
-  bucket = "lambda-code-bucket-foz"
+# Create the S3 bucket to store Lambda code
+resource "aws_s3_bucket" "lambda_code_bucket" {
+  bucket = var.lambda_code_bucket
 }
+
+# Block public access for the Lambda code bucket
+resource "aws_s3_bucket_public_access_block" "lambda_code_bucket_block" {
+  bucket = aws_s3_bucket.lambda_code_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 
 # Policy: Allow Terraform IAM Role & Lambda to Read Objects
 resource "aws_s3_bucket_policy" "lambda_code_policy" {
