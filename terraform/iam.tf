@@ -24,7 +24,7 @@ resource "aws_iam_policy" "lambda_s3_access" {
         Resource  = [
           "${aws_s3_bucket.original.arn}/*",
           "${aws_s3_bucket.resized.arn}/*",
-          "${aws_s3_bucket.lambda_code.arn}/*"
+          "${aws_s3_bucket.lambda_code_bucket.arn}/*"
         ]
       }
     ]
