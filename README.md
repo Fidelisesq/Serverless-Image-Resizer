@@ -1,1 +1,0 @@
-# Serverless-Image-Resizer
