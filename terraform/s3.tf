@@ -11,9 +11,8 @@ resource "aws_s3_bucket" "resized" {
 # S3 Bucket for Frontend Hosting
 resource "aws_s3_bucket" "frontend" {
   bucket = "image-resizer.fozdigitalz.com"
+  
 }
-
-
 
 # Enable Static Website Hosting for Frontend Bucket
 resource "aws_s3_bucket_website_configuration" "frontend_website" {
@@ -22,6 +21,7 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
     suffix = "index.html"
   }
 }
+
 
 
 
