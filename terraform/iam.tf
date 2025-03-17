@@ -111,3 +111,36 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
     ]
   })
 }
+
+#Permission for API Gateway to invoke Lambfa
+resource "aws_lambda_permission" "allow_apigw_presign" {
+  statement_id  = "AllowAPIGatewayInvokePresign"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.presign.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.image_api.execution_arn}/*"
+}
+
+resource "aws_lambda_permission" "allow_apigw_list" {
+  statement_id  = "AllowAPIGatewayInvokeList"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.list.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.image_api.execution_arn}/*"
+}
+
+resource "aws_lambda_permission" "allow_apigw_delete" {
+  statement_id  = "AllowAPIGatewayInvokeDelete"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.delete.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.image_api.execution_arn}/*"
+}
+
+resource "aws_lambda_permission" "allow_apigw_resize" {
+  statement_id  = "AllowAPIGatewayInvokeResize"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.resize.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.image_api.execution_arn}/*"
+}
