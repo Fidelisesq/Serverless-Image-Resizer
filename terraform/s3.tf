@@ -24,23 +24,6 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
 }
 
 
-/*
-# Create the S3 bucket to store Lambda code
-resource "aws_s3_bucket" "lambda_code_bucket" {
-  bucket = var.lambda_code_bucket
-}
-*/
-
-# Enable versioning on the bucket
-resource "aws_s3_bucket_versioning" "lambda_code_bucket_versioning" {
-  bucket = aws_s3_bucket.lambda_code_bucket.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-
 
 
 
