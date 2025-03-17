@@ -1,45 +1,19 @@
-# Zip Lambda code and upload it to S3
+# Zip Lambda code and upload to S3
 resource "null_resource" "lambda_zip" {
-  depends_on = [aws_s3_bucket.lambda_code_bucket]
-
   provisioner "local-exec" {
-    command = "zip -r presign.zip ./lambda/presign/* || true"
-    working_dir = "${path.module}/../lambda"
+    command = "cd ${path.module}/../lambda/presign && zip -r ../presign.zip ."
   }
 
   provisioner "local-exec" {
-    command = "zip -r resize.zip ./lambda/resize/* || true"
-    working_dir = "${path.module}/../lambda"
+    command = "cd ${path.module}/../lambda/resize && zip -r ../resize.zip ."
   }
 
   provisioner "local-exec" {
-    command = "zip -r list.zip ./lambda/list/* || true"
-    working_dir = "${path.module}/../lambda"
+    command = "cd ${path.module}/../lambda/list && zip -r ../list.zip ."
   }
 
   provisioner "local-exec" {
-    command = "zip -r delete.zip ./lambda/delete/* || true"
-    working_dir = "${path.module}/../lambda"
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp presign.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/presign.zip"
-    working_dir = "${path.module}/../lambda"
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp resize.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/resize.zip"
-    working_dir = "${path.module}/../lambda"
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp list.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/list.zip"
-    working_dir = "${path.module}/../lambda"
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp delete.zip s3://${aws_s3_bucket.lambda_code_bucket.bucket}/delete.zip"
-    working_dir = "${path.module}/../lambda"
+    command = "cd ${path.module}/../lambda/delete && zip -r ../delete.zip ."
   }
 
   triggers = {
@@ -47,9 +21,37 @@ resource "null_resource" "lambda_zip" {
   }
 }
 
-# Lambda Functions (Presign, Resize, List, Delete)
+resource "aws_s3_object" "lambda_presign" {
+  depends_on = [null_resource.lambda_zip]
+  bucket = aws_s3_bucket.lambda_code_bucket.bucket
+  key    = "presign.zip"
+  source = "${path.module}/../lambda/presign.zip"
+}
+
+resource "aws_s3_object" "lambda_resize" {
+  depends_on = [null_resource.lambda_zip]
+  bucket = aws_s3_bucket.lambda_code_bucket.bucket
+  key    = "resize.zip"
+  source = "${path.module}/../lambda/resize.zip"
+}
+
+resource "aws_s3_object" "lambda_list" {
+  depends_on = [null_resource.lambda_zip]
+  bucket = aws_s3_bucket.lambda_code_bucket.bucket
+  key    = "list.zip"
+  source = "${path.module}/../lambda/list.zip"
+}
+
+resource "aws_s3_object" "lambda_delete" {
+  depends_on = [null_resource.lambda_zip]
+  bucket = aws_s3_bucket.lambda_code_bucket.bucket
+  key    = "delete.zip"
+  source = "${path.module}/../lambda/delete.zip"
+}
+
+# Lambda Functions with source_code_hash for automatic updates
 resource "aws_lambda_function" "presign" {
-  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
+  depends_on       = [aws_s3_object.lambda_presign]
   function_name    = "presign"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -57,6 +59,7 @@ resource "aws_lambda_function" "presign" {
   s3_bucket       = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key          = "presign.zip"
   timeout         = 10
+  source_code_hash = filebase64sha256("${path.module}/../lambda/presign.zip")
 
   environment {
     variables = {
@@ -66,7 +69,7 @@ resource "aws_lambda_function" "presign" {
 }
 
 resource "aws_lambda_function" "resize" {
-  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
+  depends_on       = [aws_s3_object.lambda_resize]
   function_name    = "resize"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -74,6 +77,7 @@ resource "aws_lambda_function" "resize" {
   s3_bucket       = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key          = "resize.zip"
   timeout         = 10
+  source_code_hash = filebase64sha256("${path.module}/../lambda/resize.zip")
 
   environment {
     variables = {
@@ -84,7 +88,7 @@ resource "aws_lambda_function" "resize" {
 }
 
 resource "aws_lambda_function" "list" {
-  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
+  depends_on       = [aws_s3_object.lambda_list]
   function_name    = "list"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -92,6 +96,7 @@ resource "aws_lambda_function" "list" {
   s3_bucket       = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key          = "list.zip"
   timeout         = 10
+  source_code_hash = filebase64sha256("${path.module}/../lambda/list.zip")
 
   environment {
     variables = {
@@ -101,7 +106,7 @@ resource "aws_lambda_function" "list" {
 }
 
 resource "aws_lambda_function" "delete" {
-  depends_on = [null_resource.lambda_zip, aws_s3_bucket.lambda_code_bucket] 
+  depends_on       = [aws_s3_object.lambda_delete]
   function_name    = "delete"
   handler         = "index.handler"
   runtime         = "nodejs18.x"
@@ -109,6 +114,7 @@ resource "aws_lambda_function" "delete" {
   s3_bucket       = aws_s3_bucket.lambda_code_bucket.bucket
   s3_key          = "delete.zip"
   timeout         = 10
+  source_code_hash = filebase64sha256("${path.module}/../lambda/delete.zip")
 
   environment {
     variables = {
