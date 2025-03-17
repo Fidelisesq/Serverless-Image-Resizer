@@ -1,4 +1,4 @@
-# 1Create CloudFront Origin Access Control (OAC)
+# Create CloudFront Origin Access Control (OAC)
 resource "aws_cloudfront_origin_access_control" "frontend_oac" {
   name                              = "frontend-oac"
   description                       = "OAC for CloudFront to access S3 bucket securely"
