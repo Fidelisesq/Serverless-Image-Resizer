@@ -15,23 +15,38 @@ exports.handler = async (event) => {
 
         const params = {
             Bucket: BUCKET_NAME,
-            Key: `uploads/${fileName}`,
-            Expires: 300,
-            Conditions: [{ acl: "private" }],
+            Fields: { key: `uploads/${fileName}` }, // Corrected format
+            Conditions: [
+                ["starts-with", "$key", "uploads/"], // Ensures key starts with "uploads/"
+                { bucket: BUCKET_NAME },
+                { acl: "private" } // Fixing condition format
+            ],
+            Expires: 300 // Expiry time for the presigned URL
         };
 
-        const signedUrl = await s3.createPresignedPost(params);
+        return new Promise((resolve, reject) => {
+            s3.createPresignedPost(params, (err, signedUrl) => {
+                if (err) {
+                    console.error("Error generating presigned URL:", err);
+                    reject({
+                        statusCode: 500,
+                        body: JSON.stringify({ error: "Internal Server Error" })
+                    });
+                } else {
+                    resolve({
+                        statusCode: 200,
+                        body: JSON.stringify({
+                            url: signedUrl.url,
+                            fields: signedUrl.fields,
+                            resizeOption: resizeOption
+                        })
+                    });
+                }
+            });
+        });
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({
-                url: signedUrl.url,
-                fields: signedUrl.fields,
-                resizeOption: resizeOption
-            })
-        };
     } catch (error) {
-        console.error("Error generating presigned URL:", error);
+        console.error("Unexpected error:", error);
         return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error" }) };
     }
 };
