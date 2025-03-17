@@ -4,9 +4,9 @@ resource "aws_lambda_function" "presign" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   role             = aws_iam_role.lambda_exec_role.arn
-  filename         = "${path.module}/lambda/presign.zip"  # Reference the local zip file directly
+  filename         = "../lambda/presign.zip"  
   timeout          = 10
-  source_code_hash = filebase64sha256("${path.module}/lambda/presign.zip")  # Hash for integrity check
+  source_code_hash = filebase64sha256("../lambda/presign.zip")  
 
   environment {
     variables = {
@@ -21,9 +21,9 @@ resource "aws_lambda_function" "resize" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   role             = aws_iam_role.lambda_exec_role.arn
-  filename         = "${path.module}/lambda/resize.zip"  # Reference the local zip file directly
+  filename         = "../lambda/resize.zip"  
   timeout          = 10
-  source_code_hash = filebase64sha256("${path.module}/lambda/resize.zip")  # Hash for integrity check
+  source_code_hash = filebase64sha256("../lambda/resize.zip")  
 
   environment {
     variables = {
@@ -39,9 +39,9 @@ resource "aws_lambda_function" "list" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   role             = aws_iam_role.lambda_exec_role.arn
-  filename         = "${path.module}/lambda/list.zip"  # Reference the local zip file directly
+  filename         = "../lambda/list.zip"  
   timeout          = 10
-  source_code_hash = filebase64sha256("${path.module}/lambda/list.zip")  # Hash for integrity check
+  source_code_hash = filebase64sha256("../lambda/list.zip")  
 
   environment {
     variables = {
@@ -56,9 +56,9 @@ resource "aws_lambda_function" "delete" {
   handler          = "index.handler"
   runtime          = "nodejs18.x"
   role             = aws_iam_role.lambda_exec_role.arn
-  filename         = "${path.module}/lambda/delete.zip"  # Reference the local zip file directly
+  filename         = "../lambda/delete.zip" 
   timeout          = 10
-  source_code_hash = filebase64sha256("${path.module}/lambda/delete.zip")  # Hash for integrity check
+  source_code_hash = filebase64sha256("../lambda/delete.zip") 
 
   environment {
     variables = {
