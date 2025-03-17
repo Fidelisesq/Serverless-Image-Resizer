@@ -11,7 +11,7 @@ resource "aws_s3_bucket" "resized" {
 # S3 Bucket for Frontend Hosting
 resource "aws_s3_bucket" "frontend" {
   bucket = "image-resizer.fozdigitalz.com"
-  
+  force_destroy = true
 }
 
 # Enable Static Website Hosting for Frontend Bucket
