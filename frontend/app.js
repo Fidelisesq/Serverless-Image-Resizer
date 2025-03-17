@@ -2,10 +2,28 @@
     let functionUrlPresign = localStorage.getItem("functionUrlPresign");
     let functionUrlList = localStorage.getItem("functionUrlList");
     let functionUrlDelete = localStorage.getItem("functionUrlDelete");
+    let functionUrlResize = localStorage.getItem("functionUrlResize");
 
+    // Default API Gateway URLs for each route
+    const apiGatewayBaseUrl = "https://hdyyqsov74.execute-api.us-east-1.amazonaws.com/prod";
+    const defaultUrls = {
+        presign: `${apiGatewayBaseUrl}/presign`,
+        list: `${apiGatewayBaseUrl}/list`,
+        delete: `${apiGatewayBaseUrl}/delete`,
+        resize: `${apiGatewayBaseUrl}/resize`
+    };
+
+    // Load URLs from localStorage or use default URLs if not set
+    if (!functionUrlPresign) functionUrlPresign = defaultUrls.presign;
+    if (!functionUrlList) functionUrlList = defaultUrls.list;
+    if (!functionUrlDelete) functionUrlDelete = defaultUrls.delete;
+    if (!functionUrlResize) functionUrlResize = defaultUrls.resize;
+
+    // Set the values in the form
     if (functionUrlPresign) $("#functionUrlPresign").val(functionUrlPresign);
     if (functionUrlList) $("#functionUrlList").val(functionUrlList);
     if (functionUrlDelete) $("#functionUrlDelete").val(functionUrlDelete);
+    if (functionUrlResize) $("#functionUrlResize").val(functionUrlResize);
 
     let imageItemTemplate = Handlebars.compile($("#image-item-template").html());
 
@@ -28,9 +46,11 @@
                     localStorage.setItem(resultElement, funcUrl);
                 };
 
+                // Use default URLs if function URL not set in localStorage
                 await loadUrl("presign", "functionUrlPresign");
                 await loadUrl("list", "functionUrlList");
                 await loadUrl("delete", "functionUrlDelete");
+                await loadUrl("resize", "functionUrlResize");
 
                 alert("Function URL configurations loaded");
             } catch (error) {
@@ -41,16 +61,18 @@
             localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
             localStorage.setItem("functionUrlList", $("#functionUrlList").val());
             localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
+            localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
             alert("Configuration saved");
         } else if (action == "clear") {
             localStorage.clear();
-            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete").val("");
+            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
             alert("Configuration cleared");
         } else {
             alert("Unknown action");
         }
     });
 
+    // Upload form
     $("#uploadForm").submit(async function (event) {
         event.preventDefault();
         $("#uploadForm button").addClass('disabled');
@@ -63,8 +85,14 @@
         }
 
         let functionUrlPresign = $("#functionUrlPresign").val();
+        let functionUrlResize = $("#functionUrlResize").val();
+
         if (!functionUrlPresign) {
             alert("Please set the function URL for presign Lambda.");
+            return;
+        }
+        if (!functionUrlResize) {
+            alert("Please set the function URL for resize Lambda.");
             return;
         }
 
@@ -72,7 +100,7 @@
 
         try {
             let response = await $.ajax({
-                url: `${functionUrlPresign}?fileName=${encodeURIComponent(file.name)}&size=${resizeOption}`,
+                url: `${functionUrlResize}?fileName=${encodeURIComponent(file.name)}&size=${resizeOption}`,
                 method: "GET"
             });
 
@@ -97,62 +125,5 @@
             $("#uploadForm button").removeClass('disabled');
         }
     });
-
-    function updateImageList() {
-        let functionUrlList = $("#functionUrlList").val();
-        if (!functionUrlList) {
-            alert("Please set the function URL for list Lambda.");
-            return;
-        }
-
-        $.ajax({
-            url: functionUrlList,
-            method: "GET",
-            success: function (response) {
-                $('#imagesContainer').empty();
-                response.forEach(function (item) {
-                    let cardHtml = imageItemTemplate(item);
-                    $("#imagesContainer").append(cardHtml);
-                });
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.error("Error fetching image list:", textStatus, errorThrown);
-                alert("Error fetching images.");
-            }
-        });
-    }
-
-    function deleteImage(imageName) {
-        let functionUrlDelete = $("#functionUrlDelete").val();
-        if (!functionUrlDelete) {
-            alert("Please set the function URL for delete Lambda.");
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to delete ${imageName}?`)) return;
-
-        $.ajax({
-            type: "DELETE",
-            url: `${functionUrlDelete}?name=${encodeURIComponent(imageName)}`,
-            success: function () {
-                alert("Image deleted successfully!");
-                updateImageList();
-            },
-            error: function (err) {
-                console.error("Error deleting image:", err);
-                alert("Failed to delete image.");
-            }
-        });
-    }
-
-    $("#updateImageListButton").click(function () {
-        updateImageList();
-    });
-
-    if (functionUrlList) {
-        updateImageList();
-    }
-
-    window.deleteImage = deleteImage; // Expose function globally for HTML button calls
 
 })(jQuery);
