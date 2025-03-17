@@ -1,9 +1,4 @@
 (function ($) {
-    let functionUrlPresign = localStorage.getItem("functionUrlPresign");
-    let functionUrlList = localStorage.getItem("functionUrlList");
-    let functionUrlDelete = localStorage.getItem("functionUrlDelete");
-    let functionUrlResize = localStorage.getItem("functionUrlResize");
-
     // Default API Gateway URLs for each route
     const apiGatewayBaseUrl = "https://hdyyqsov74.execute-api.us-east-1.amazonaws.com/prod";
     const defaultUrls = {
@@ -13,20 +8,40 @@
         resize: `${apiGatewayBaseUrl}/resize`
     };
 
-    // Load URLs from localStorage or use default URLs if not set
-    if (!functionUrlPresign) functionUrlPresign = defaultUrls.presign;
-    if (!functionUrlList) functionUrlList = defaultUrls.list;
-    if (!functionUrlDelete) functionUrlDelete = defaultUrls.delete;
-    if (!functionUrlResize) functionUrlResize = defaultUrls.resize;
-
-    // Set the values in the form
-    if (functionUrlPresign) $("#functionUrlPresign").val(functionUrlPresign);
-    if (functionUrlList) $("#functionUrlList").val(functionUrlList);
-    if (functionUrlDelete) $("#functionUrlDelete").val(functionUrlDelete);
-    if (functionUrlResize) $("#functionUrlResize").val(functionUrlResize);
+    // Do not pre-populate fields initially. Set them as empty
+    $("#functionUrlPresign").val("");
+    $("#functionUrlList").val("");
+    $("#functionUrlDelete").val("");
+    $("#functionUrlResize").val("");
 
     let imageItemTemplate = Handlebars.compile($("#image-item-template").html());
 
+    // Event listener for generating presign URL when the field is clicked
+    $("#functionUrlPresign").click(async function () {
+        try {
+            // Send request to Lambda presign function to get the presigned URL
+            const response = await $.ajax({
+                url: defaultUrls.presign,
+                method: "GET",
+                success: function (result) {
+                    const presignUrl = result.presignUrl; // Adjust this based on your Lambda's response structure
+                    $("#functionUrlPresign").val(presignUrl); // Populate the field with the generated URL
+
+                    // Optionally store it in localStorage for persistence
+                    localStorage.setItem("functionUrlPresign", presignUrl);
+                },
+                error: function (error) {
+                    console.error("Error generating presign URL:", error);
+                    alert("Failed to generate presign URL.");
+                }
+            });
+        } catch (error) {
+            console.error("Error generating presign URL:", error);
+            alert("Error generating presign URL.");
+        }
+    });
+
+    // Handle other buttons like Load, Save, Clear in configForm
     $("#configForm").submit(async function (event) {
         event.preventDefault();
         let action = event.originalEvent.submitter.getAttribute('name');
@@ -46,7 +61,7 @@
                     localStorage.setItem(resultElement, funcUrl);
                 };
 
-                // Use default URLs if function URL not set in localStorage
+                // Load URLs for each Lambda function when requested
                 await loadUrl("presign", "functionUrlPresign");
                 await loadUrl("list", "functionUrlList");
                 await loadUrl("delete", "functionUrlDelete");
@@ -58,12 +73,14 @@
                 alert("Error loading function URLs. Check the logs.");
             }
         } else if (action == "save") {
+            // Save URLs to localStorage when Save is clicked
             localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
             localStorage.setItem("functionUrlList", $("#functionUrlList").val());
             localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
             localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
             alert("Configuration saved");
         } else if (action == "clear") {
+            // Clear localStorage and form fields when Clear is clicked
             localStorage.clear();
             $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
             alert("Configuration cleared");
@@ -72,7 +89,7 @@
         }
     });
 
-    // Upload form
+    // Upload form logic
     $("#uploadForm").submit(async function (event) {
         event.preventDefault();
         $("#uploadForm button").addClass('disabled');
