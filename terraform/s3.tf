@@ -23,6 +23,7 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
   }
 }
 
+/*
 # Policy: Restrict Image Buckets to CloudFront (For Security)
 resource "aws_s3_bucket_policy" "original_bucket_policy" {
   bucket = aws_s3_bucket.original.id
@@ -38,6 +39,7 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
     ]
   })
 }
+*/
 
 # Create the S3 bucket to store Lambda code
 resource "aws_s3_bucket" "lambda_code_bucket" {
