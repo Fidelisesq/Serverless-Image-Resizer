@@ -25,6 +25,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -32,43 +35,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Create terraform.tfvars
+        run: |
+           cat <<EOF > terraform/terraform.tfvars
+           hosted_zone_id = "${{ secrets.HOSTED_ZONE_ID }}"
+           zone_id = "${{ secrets.ZONE_ID }}"
+           acm_certificate_arn = "${{ secrets.ACM_CERTIFICTE_ARN }}"
+           frontend_domain_name = "${{ secrets.FRONTEND_DOMAIN_NAME }}"
+           EOF
+
       - name: Mask AWS Account ID in Logs
         run: echo "::add-mask::${{ secrets.AWS_ACCOUNT_ID }}"
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Create terraform.tfvars
-        run: |
-          cat <<EOF > terraform/terraform.tfvars
-          hosted_zone_id = "${{ secrets.HOSTED_ZONE_ID }}"
-          acm_certificate_arn = "${{ secrets.ACM_CERTIFICATE_ARN }}"
-          frontend_domain_name = "${{ secrets.FRONTEND_DOMAIN_NAME }}"
-          lambda_code_bucket = "${{ secrets.LAMBDA_CODE_BUCKET }}"
-          EOF
-
-      - name: Initialize Terraform
         run: |
           cd terraform
           terraform init
 
-      - name: Apply Terraform
+      - name: Terraform Apply
         run: |
           cd terraform
           terraform apply -auto-approve -var-file=terraform.tfvars
 
-      - name: Upload Lambda Code to S3
-        run: |
-          for function in presign resize list delete; do
-            zip -r $function.zip lambda/$function/*
-            aws s3 cp $function.zip s3://${{ secrets.LAMBDA_CODE_BUCKET }}/$function.zip
-          done
-
-      - name: Deploy Lambda Functions
-        run: |
-          for function in presign resize list delete; do
-            aws lambda update-function-code --function-name $function --s3-bucket ${{ secrets.LAMBDA_CODE_BUCKET }} --s3-key $function.zip
-          done
 
       - name: Deploy Frontend to S3
         run: |
@@ -83,6 +71,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -90,27 +81,23 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Mask AWS Account ID in Logs
-        run: echo "::add-mask::${{ secrets.AWS_ACCOUNT_ID }}"
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-
       - name: Create terraform.tfvars
         run: |
-          cat <<EOF > terraform/terraform.tfvars
-          hosted_zone_id = "${{ secrets.HOSTED_ZONE_ID }}"
-          acm_certificate_arn = "${{ secrets.ACM_CERTIFICATE_ARN }}"
-          frontend_domain_name = "${{ secrets.FRONTEND_DOMAIN_NAME }}"
-          lambda_code_bucket = "${{ secrets.LAMBDA_CODE_BUCKET }}"
-          EOF
+           cat <<EOF > terraform/terraform.tfvars
+           hosted_zone_id = "${{ secrets.HOSTED_ZONE_ID }}"
+           acm_certificate_arn = "${{ secrets.ACM_CERTIFICTE_ARN }}"
+           frontend_domain_name = "${{ secrets.FRONTEND_DOMAIN_NAME }}"
+           EOF
 
-      - name: Initialize Terraform
+      - name: Mask AWS Account ID in Logs
+        run: echo "::add-mask::${{ secrets.AWS_ACCOUNT_ID }}"    
+
+      - name: Set up Terraform
         run: |
           cd terraform
           terraform init
 
-      - name: Destroy Terraform Resources
+      - name: Terraform Destroy
         run: |
           cd terraform
           terraform destroy -auto-approve -var-file=terraform.tfvars

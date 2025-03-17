@@ -14,10 +14,12 @@ variable "acm_certificate_arn" {
     type =  string
 }
 
+/*
 variable "lambda_code_bucket" {
   description = "S3 bucket for storing Lambda function zip files"
   type        = string
 }
+*/
 
 
 

@@ -23,28 +23,13 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
   }
 }
 
-/*
-# Policy: Restrict Image Buckets to CloudFront (For Security)
-resource "aws_s3_bucket_policy" "original_bucket_policy" {
-  bucket = aws_s3_bucket.original.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.original.arn}/*"
-      }
-    ]
-  })
-}
-*/
 
+/*
 # Create the S3 bucket to store Lambda code
 resource "aws_s3_bucket" "lambda_code_bucket" {
   bucket = var.lambda_code_bucket
 }
+*/
 
 # Enable versioning on the bucket
 resource "aws_s3_bucket_versioning" "lambda_code_bucket_versioning" {
