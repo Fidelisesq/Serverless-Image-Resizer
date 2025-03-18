@@ -1,8 +1,9 @@
-const AWS = require("aws-sdk");
-const s3 = new AWS.S3({ region: "us-east-1" });
+import { S3Client, CreatePresignedPostCommand } from "@aws-sdk/client-s3";
+
+const s3 = new S3Client({ region: "us-east-1" });
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
 
     const queryParams = event.queryStringParameters || {};
@@ -19,26 +20,25 @@ exports.handler = async (event) => {
             ["starts-with", "$key", "uploads/"],
             { bucket: BUCKET_NAME }
         ],
-        Expires: 300 
+        Expires: 300
     };
 
-    return new Promise((resolve, reject) => {
-        s3.createPresignedPost(params, (err, signedUrl) => {
-            if (err) {
-                console.error("Error generating presigned URL:", err);
-                reject({
-                    statusCode: 500,
-                    body: JSON.stringify({ error: "Internal Server Error" })
-                });
-            } else {
-                resolve({
-                    statusCode: 200,
-                    body: JSON.stringify({
-                        url: signedUrl.url,
-                        fields: signedUrl.fields
-                    })
-                });
-            }
-        });
-    });
+    try {
+        const command = new CreatePresignedPostCommand(params);
+        const signedUrl = await s3.send(command);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                url: signedUrl.url,
+                fields: signedUrl.fields
+            })
+        };
+    } catch (err) {
+        console.error("Error generating presigned URL:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Internal Server Error" })
+        };
+    }
 };
