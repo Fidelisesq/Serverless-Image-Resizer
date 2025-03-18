@@ -31,23 +31,24 @@ resource "aws_s3_bucket_public_access_block" "resized_block" {
   restrict_public_buckets = false
 }
 
-# S3 Bucket Policy for Original & Resized Buckets
-resource "aws_s3_bucket_policy" "original_policy" {
-  bucket = aws_s3_bucket.frontend.id
+# S3 Bucket Policy to Allow Cloudfront , Original & Resized Buckets
+#Attach Policy to Frontend Bucket (CloudFront & Uploads)
+resource "aws_s3_bucket_policy" "frontend_policy" {
+  bucket = aws_s3_bucket.frontend.id  # Attach policy to frontend (CloudFront)
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
 
-      #CloudFront to Access & Serve Images from "original"
+      # Allow CloudFront to Access & Serve Website (Frontend Bucket)
       {
-        Sid    = "AllowCloudFrontOriginal",
+        Sid    = "AllowCloudFrontAccessFrontend",
         Effect = "Allow",
         Principal = {
           Service = "cloudfront.amazonaws.com"
         },
         Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.original.arn}/*",
+        Resource = "${aws_s3_bucket.frontend.arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
@@ -55,9 +56,9 @@ resource "aws_s3_bucket_policy" "original_policy" {
         }
       },
 
-      # Allow Users to Upload via Presigned URL to "original"
+      # Allow Users to Upload via Presigned URL to "original" (Uploads)
       {
-        Sid    = "AllowPresignedUploadsOriginal",
+        Sid    = "AllowPresignedUploadsToOriginal",
         Effect = "Allow",
         Principal = "*",
         Action   = "s3:PutObject",
@@ -71,7 +72,7 @@ resource "aws_s3_bucket_policy" "original_policy" {
 
       # Allow API Gateway to Upload to "original"
       {
-        Sid    = "AllowAPIGatewayUploadOriginal",
+        Sid    = "AllowAPIGatewayUploadToOriginal",
         Effect = "Allow",
         Principal = {
           Service = "apigateway.amazonaws.com"
@@ -82,6 +83,57 @@ resource "aws_s3_bucket_policy" "original_policy" {
     ]
   })
 }
+
+# Allow CloudFront to Serve Processed Images from "resized"
+resource "aws_s3_bucket_policy" "resized_policy" {
+  bucket = aws_s3_bucket.resized.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontAccessResized",
+        Effect = "Allow",
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        },
+        Action   = "s3:GetObject",
+        Resource = "${aws_s3_bucket.resized.arn}/*",
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
+          }
+        }
+      }
+    ]
+  })
+}
+
+#Enable CORS for Uploads & Image Access
+resource "aws_s3_bucket_cors_configuration" "original_cors" {
+  bucket = aws_s3_bucket.original.id
+
+  cors_rule {
+    allowed_methods = ["GET", "HEAD", "PUT", "POST"]
+    allowed_origins = ["https://image-resizer.fozdigitalz.com"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "resized_cors" {
+  bucket = aws_s3_bucket.resized.id
+
+  cors_rule {
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["https://image-resizer.fozdigitalz.com"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 
 #S3 Policy for Resized Bucket (Accessible for Downloads)
 resource "aws_s3_bucket_policy" "resized_policy" {
