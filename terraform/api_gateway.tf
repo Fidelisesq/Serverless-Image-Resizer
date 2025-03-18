@@ -91,3 +91,30 @@ resource "aws_apigatewayv2_route" "resize_route" {
   route_key = "POST /resize"
   target    = "integrations/${aws_apigatewayv2_integration.resize_integration.id}"
 }
+
+#API-Gateway CORS
+resource "aws_apigatewayv2_route" "options_route" {
+  api_id    = aws_apigatewayv2_api.image_api.id
+  route_key = "OPTIONS /{proxy+}"  # Handles all routes' CORS preflight
+  target    = "integrations/${aws_apigatewayv2_integration.presign_integration.id}"
+}
+
+resource "aws_apigatewayv2_stage" "prod" {
+  api_id      = aws_apigatewayv2_api.image_api.id
+  name        = "prod"
+  auto_deploy = true
+  default_route_settings {
+    throttling_rate_limit  = 100
+    throttling_burst_limit = 50
+    detailed_metrics_enabled = true
+  }
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.apigateway_logs.arn
+    format          = "$context.requestId $context.httpMethod $context.path $context.status"
+  }
+  cors_configuration {
+    allow_origins = ["https://image-resizer.fozdigitalz.com"]
+    allow_methods = ["GET", "POST", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization"]
+  }
+}

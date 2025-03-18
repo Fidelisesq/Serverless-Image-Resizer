@@ -7,6 +7,7 @@ resource "aws_cloudfront_origin_access_control" "frontend_oac" {
   signing_protocol                  = "sigv4"
 }
 
+# CloudFront Distribution with CORS
 resource "aws_cloudfront_distribution" "frontend_distribution" {
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -21,16 +22,19 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
   default_cache_behavior {
     viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD"]
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "S3-${aws_s3_bucket.frontend.id}"
 
     forwarded_values {
       query_string = false
+      headers      = ["Origin"]  # Ensure CORS works by forwarding Origin header
       cookies {
         forward = "none"
       }
     }
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
   viewer_certificate {
@@ -41,7 +45,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
   restrictions {
     geo_restriction {
-      restriction_type = "none" # Allows requests from all locations
+      restriction_type = "none"
     }
   }
 }

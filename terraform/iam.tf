@@ -97,6 +97,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
+      # Existing CloudFront Access
       {
         Sid    = "AllowCloudFrontAccess",
         Effect = "Allow",
@@ -114,10 +115,36 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
           }
         }
+      },
+
+      # NEW: Allow Presigned URL Uploads (Restrict to API Gateway & Your Site)
+      {
+        Sid    = "AllowPresignedUploads",
+        Effect = "Allow",
+        Principal = "*",
+        Action   = "s3:PutObject",
+        Resource = "${aws_s3_bucket.frontend.arn}/uploads/*",
+        Condition = {
+          StringLike = {
+            "aws:Referer" = "https://image-resizer.fozdigitalz.com"
+          }
+        }
+      },
+
+      # NEW: Ensure API Gateway Can Upload
+      {
+        Sid    = "AllowAPIGatewayPresignedUpload",
+        Effect = "Allow",
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        },
+        Action   = "s3:PutObject",
+        Resource = "${aws_s3_bucket.frontend.arn}/uploads/*"
       }
     ]
   })
 }
+
 
 #Permission for API Gateway to invoke Lambfa
 resource "aws_lambda_permission" "allow_apigw_presign" {

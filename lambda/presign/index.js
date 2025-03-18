@@ -1,43 +1,53 @@
-import { S3Client, CreatePresignedPostCommand } from "@aws-sdk/client-s3";
+const AWS = require("aws-sdk");
 
-const s3 = new S3Client({ region: "us-east-1" });
+const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
 
     const queryParams = event.queryStringParameters || {};
     const fileName = queryParams.fileName;
 
     if (!fileName) {
-        return { statusCode: 400, body: JSON.stringify({ message: "Missing fileName" }) };
+        return {
+            statusCode: 400,
+            headers: {
+                "Access-Control-Allow-Origin": "https://image-resizer.fozdigitalz.com",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
+            body: JSON.stringify({ message: "Missing fileName" })
+        };
     }
 
     const params = {
         Bucket: BUCKET_NAME,
-        Fields: { key: `uploads/${fileName}` },
-        Conditions: [
-            ["starts-with", "$key", "uploads/"],
-            { bucket: BUCKET_NAME }
-        ],
+        Key: `uploads/${fileName}`,
         Expires: 300
     };
 
     try {
-        const command = new CreatePresignedPostCommand(params);
-        const signedUrl = await s3.send(command);
+        const signedUrl = await s3.getSignedUrlPromise("putObject", params);
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                url: signedUrl.url,
-                fields: signedUrl.fields
-            })
+            headers: {
+                "Access-Control-Allow-Origin": "https://image-resizer.fozdigitalz.com",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
+            body: JSON.stringify({ url: signedUrl })
         };
     } catch (err) {
         console.error("Error generating presigned URL:", err);
         return {
             statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Origin": "https://image-resizer.fozdigitalz.com",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
             body: JSON.stringify({ error: "Internal Server Error" })
         };
     }
