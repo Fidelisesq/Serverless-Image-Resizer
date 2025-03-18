@@ -1,6 +1,6 @@
 # 🚀 Fix: Declare the frontend, original, and resized S3 buckets
 resource "aws_s3_bucket" "frontend" {
-  bucket = "frontend-image-resizer-foz"
+  bucket = "image-resizer.fozdigitalz.com"
   force_destroy = true
 }
 
