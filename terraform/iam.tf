@@ -36,6 +36,13 @@ resource "aws_iam_role_policy_attachment" "attach_lambda_s3_policy" {
   role       = aws_iam_role.lambda_exec_role.name
 }
 
+#Attach AWS Manages role to write to Cloudwatch
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.lambda_exec_role.name
+}
+
+
 # Data source to fetch current account info
 data "aws_caller_identity" "current" {}
 
