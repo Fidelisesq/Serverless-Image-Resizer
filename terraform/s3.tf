@@ -33,13 +33,13 @@ resource "aws_s3_bucket_public_access_block" "resized_block" {
 
 # S3 Bucket Policy for Original & Resized Buckets
 resource "aws_s3_bucket_policy" "original_policy" {
-  bucket = aws_s3_bucket.original.id
+  bucket = aws_s3_bucket.frontend.id
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
 
-      # ✅ Allow CloudFront to Access & Serve Images from "original"
+      #CloudFront to Access & Serve Images from "original"
       {
         Sid    = "AllowCloudFrontOriginal",
         Effect = "Allow",
@@ -55,7 +55,7 @@ resource "aws_s3_bucket_policy" "original_policy" {
         }
       },
 
-      # ✅ Allow Users to Upload via Presigned URL to "original"
+      # Allow Users to Upload via Presigned URL to "original"
       {
         Sid    = "AllowPresignedUploadsOriginal",
         Effect = "Allow",
