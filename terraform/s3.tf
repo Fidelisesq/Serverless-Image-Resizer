@@ -8,7 +8,7 @@ resource "aws_s3_bucket_cors_configuration" "original_bucket_cors" {
   bucket = aws_s3_bucket.original.id
 
   cors_rule {
-    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST"]
+    allowed_methods = ["GET", "HEAD", "PUT", "POST"]
     allowed_origins = ["https://image-resizer.fozdigitalz.com"]
     allowed_headers = ["*"]
     expose_headers  = ["ETag"]

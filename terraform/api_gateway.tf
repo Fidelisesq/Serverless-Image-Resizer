@@ -26,8 +26,13 @@ resource "aws_apigatewayv2_stage" "prod" {
 }
 
 # Define Lambda Permissions for API Gateway to Invoke Functions
+resource "random_id" "lambda_suffix" {
+  byte_length = 8
+}
+
+# Lambda Permissions with Unique Statement IDs
 resource "aws_lambda_permission" "apigw_presign" {
-  statement_id  = "AllowAPIGatewayInvokePresign"
+  statement_id  = "AllowAPIGatewayInvokePresign-${random_id.lambda_suffix.hex}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.presign.function_name
   principal     = "apigateway.amazonaws.com"
@@ -35,7 +40,7 @@ resource "aws_lambda_permission" "apigw_presign" {
 }
 
 resource "aws_lambda_permission" "apigw_list" {
-  statement_id  = "AllowAPIGatewayInvokeList"
+  statement_id  = "AllowAPIGatewayInvokeList-${random_id.lambda_suffix.hex}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.list.function_name
   principal     = "apigateway.amazonaws.com"
@@ -43,7 +48,7 @@ resource "aws_lambda_permission" "apigw_list" {
 }
 
 resource "aws_lambda_permission" "apigw_delete" {
-  statement_id  = "AllowAPIGatewayInvokeDelete"
+  statement_id  = "AllowAPIGatewayInvokeDelete-${random_id.lambda_suffix.hex}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.delete.function_name
   principal     = "apigateway.amazonaws.com"
@@ -51,12 +56,13 @@ resource "aws_lambda_permission" "apigw_delete" {
 }
 
 resource "aws_lambda_permission" "apigw_resize" {
-  statement_id  = "AllowAPIGatewayInvokeResize"
+  statement_id  = "AllowAPIGatewayInvokeResize-${random_id.lambda_suffix.hex}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.resize.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.image_api.execution_arn}/*/*"
 }
+
 
 # Define Lambda Integrations
 resource "aws_apigatewayv2_integration" "presign_integration" {
