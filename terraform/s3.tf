@@ -40,6 +40,7 @@ resource "aws_s3_bucket_public_access_block" "resized_block" {
 }
 
 # Attach Policy to Frontend Bucket (For CloudFront & Uploads)
+
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id  # Attach policy to frontend (CloudFront)
 
@@ -54,8 +55,8 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Principal = {
           Service = "cloudfront.amazonaws.com"
         },
-        Action   = "s3:GetObject",
-        Resource = "arn:aws:s3:::image-resizer.fozdigitalz.com/*",
+        Action   = ["s3:GetObject"],
+        Resource = "${aws_s3_bucket.frontend.arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
@@ -68,8 +69,8 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Sid    = "AllowPresignedUploadsToOriginal",
         Effect = "Allow",
         Principal = "*",
-        Action   = "s3:PutObject",
-        Resource = "arn:aws:s3:::original-images-bucket-foz/uploads/*",
+        Action   = ["s3:PutObject"],
+        Resource = "${aws_s3_bucket.original.arn}/uploads/*",
         Condition = {
           StringLike = {
             "aws:Referer" = "https://image-resizer.fozdigitalz.com"
@@ -84,8 +85,33 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Principal = {
           Service = "apigateway.amazonaws.com"
         },
-        Action   = "s3:PutObject",
-        Resource = "arn:aws:s3:::original-images-bucket-foz/uploads/*"
+        Action   = ["s3:PutObject"],
+        Resource = "${aws_s3_bucket.original.arn}/uploads/*"
+      }
+    ]
+  })
+}
+
+# Fix: Allow CloudFront to Serve Processed Images from "resized"
+resource "aws_s3_bucket_policy" "resized_policy" {
+  bucket = aws_s3_bucket.resized.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontAccessResized",
+        Effect = "Allow",
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        },
+        Action   = ["s3:GetObject"],
+        Resource = "${aws_s3_bucket.resized.arn}/*",
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
+          }
+        }
       }
     ]
   })
