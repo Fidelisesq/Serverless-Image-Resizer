@@ -10,7 +10,7 @@ resource "aws_s3_bucket" "original" {
 }
 
 resource "aws_s3_bucket" "resized" {
-  bucket = "resized-images-bucket-foz"
+  bucket = "resized-images-bucket-foz" 
   force_destroy = true
 }
 
