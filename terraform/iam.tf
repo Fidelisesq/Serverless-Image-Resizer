@@ -103,7 +103,7 @@ resource "aws_iam_policy" "s3_admin_policy" {
           "s3:GetBucketPolicy",
           "s3:DeleteBucketPolicy"
         ],
-        Resource = "${aws_s3_bucket.original.arn}"
+        Resource = "${aws_s3_bucket.frontend.arn}"
       }
     ]
   })

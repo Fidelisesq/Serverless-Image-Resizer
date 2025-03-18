@@ -19,22 +19,22 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
 
 #Disable Block Public Access (Allows Terraform to Manage Policies)
 resource "aws_s3_bucket_public_access_block" "original_block" {
-  bucket                  = aws_s3_bucket.original.id
+  bucket                  = aws_s3_bucket.frontend.id
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
 }
 
-# ✅ Corrected S3 Bucket Policy (Uploads + CloudFront + API Gateway)
+# Corrected S3 Bucket Policy (Uploads + CloudFront + API Gateway)
 resource "aws_s3_bucket_policy" "original_policy" {
-  bucket = aws_s3_bucket.original.id
+  bucket = aws_s3_bucket.frontend.id
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
 
-      # ✅ Allow CloudFront to Access & Serve Images
+      # Allow CloudFront to Access & Serve Images
       {
         Sid    = "AllowCloudFrontAccess",
         Effect = "Allow",
@@ -42,7 +42,7 @@ resource "aws_s3_bucket_policy" "original_policy" {
           Service = "cloudfront.amazonaws.com"
         },
         Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.original.arn}/*",
+        Resource = "${aws_s3_bucket.frontend.arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
@@ -50,13 +50,13 @@ resource "aws_s3_bucket_policy" "original_policy" {
         }
       },
 
-      # ✅ Allow Presigned URL Uploads from Frontend
+      # Allow Presigned URL Uploads from Frontend
       {
         Sid    = "AllowPresignedUploads",
         Effect = "Allow",
         Principal = "*",
         Action   = "s3:PutObject",
-        Resource = "${aws_s3_bucket.original.arn}/uploads/*",
+        Resource = "${aws_s3_bucket.frontend.arn}/uploads/*",
         Condition = {
           StringLike = {
             "aws:Referer" = "https://image-resizer.fozdigitalz.com"
@@ -64,7 +64,7 @@ resource "aws_s3_bucket_policy" "original_policy" {
         }
       },
 
-      # ✅ Allow API Gateway to Upload Files via Presigned URLs
+      # Allow API Gateway to Upload Files via Presigned URLs
       {
         Sid    = "AllowAPIGatewayPresignedUpload",
         Effect = "Allow",
@@ -78,7 +78,7 @@ resource "aws_s3_bucket_policy" "original_policy" {
   })
 }
 
-# ✅ Fix: Enable CORS for S3 Uploads (Presigned URLs)
+# Enable CORS for S3 Uploads (Presigned URLs)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
   bucket = aws_s3_bucket.original.id
 
