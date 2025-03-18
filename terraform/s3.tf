@@ -1,14 +1,17 @@
 # 🚀 Fix: Declare the frontend, original, and resized S3 buckets
 resource "aws_s3_bucket" "frontend" {
   bucket = "frontend-image-resizer-foz"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket" "original" {
   bucket = "original-images-bucket-foz"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket" "resized" {
   bucket = "resized-images-bucket-foz"
+  force_destroy = true
 }
 
 # Ensure Public Access Block is Disabled (So Terraform Can Apply Policies)
