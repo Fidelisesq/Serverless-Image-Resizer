@@ -11,7 +11,7 @@ resource "aws_apigatewayv2_stage" "prod" {
 
 # Define Lambda permissions for API Gateway to invoke
 resource "aws_lambda_permission" "apigw_presign" {
-  statement_id  = "AllowAPIGatewayInvokePresign"
+  statement_id  = "AllowAPIGatewayInvokePresign-${aws_apigatewayv2_api.image_api.id}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.presign.function_name
   principal     = "apigateway.amazonaws.com"
@@ -19,7 +19,7 @@ resource "aws_lambda_permission" "apigw_presign" {
 }
 
 resource "aws_lambda_permission" "apigw_list" {
-  statement_id  = "AllowAPIGatewayInvokeList"
+  statement_id  = "AllowAPIGatewayInvokeList-${aws_apigatewayv2_api.image_api.id}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.list.function_name
   principal     = "apigateway.amazonaws.com"
@@ -27,7 +27,7 @@ resource "aws_lambda_permission" "apigw_list" {
 }
 
 resource "aws_lambda_permission" "apigw_delete" {
-  statement_id  = "AllowAPIGatewayInvokeDelete"
+  statement_id  = "AllowAPIGatewayInvokeDelete-${aws_apigatewayv2_api.image_api.id}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.delete.function_name
   principal     = "apigateway.amazonaws.com"
@@ -35,7 +35,7 @@ resource "aws_lambda_permission" "apigw_delete" {
 }
 
 resource "aws_lambda_permission" "apigw_resize" {
-  statement_id  = "AllowAPIGatewayInvokeResize"
+  statement_id  = "AllowAPIGatewayInvokeResize-${aws_apigatewayv2_api.image_api.id}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.resize.function_name
   principal     = "apigateway.amazonaws.com"
