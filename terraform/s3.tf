@@ -4,7 +4,20 @@ resource "aws_s3_bucket" "original" {
   force_destroy = true
 }
 
-# 🚀 Fix: Disable Block Public Access (Allows Terraform to Manage Policies)
+#Frontend S3 bucket (Website Hosting Bucket)
+resource "aws_s3_bucket" "frontend" {
+  bucket = "frontend-image-resizer-foz"
+}
+
+# Enable Static Website Hosting for Frontend Bucket
+resource "aws_s3_bucket_website_configuration" "frontend_website" {
+  bucket = aws_s3_bucket.frontend.id
+  index_document {
+    suffix = "index.html"
+  }
+}
+
+#Disable Block Public Access (Allows Terraform to Manage Policies)
 resource "aws_s3_bucket_public_access_block" "original_block" {
   bucket                  = aws_s3_bucket.original.id
   block_public_acls       = false
@@ -78,15 +91,6 @@ resource "aws_s3_bucket_cors_configuration" "original_cors" {
   }
 }
 
-
-
-# Enable Static Website Hosting for Frontend Bucket
-resource "aws_s3_bucket_website_configuration" "frontend_website" {
-  bucket = aws_s3_bucket.frontend.id
-  index_document {
-    suffix = "index.html"
-  }
-}
 
 
 # S3 Bucket for Resized Images
