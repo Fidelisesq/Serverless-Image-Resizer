@@ -46,7 +46,6 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-
       # Allow CloudFront to Access & Serve Website (Frontend Bucket)
       {
         Sid    = "AllowCloudFrontAccessFrontend",
@@ -91,7 +90,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   })
 }
 
-#Allow CloudFront to Serve Processed Images from "resized"
+# Allow CloudFront to Serve Processed Images from "resized"
 resource "aws_s3_bucket_policy" "resized_policy" {
   bucket = aws_s3_bucket.resized.id
 
@@ -115,7 +114,6 @@ resource "aws_s3_bucket_policy" "resized_policy" {
     ]
   })
 }
-
 
 # Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
