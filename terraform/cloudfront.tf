@@ -1,4 +1,4 @@
-# Create CloudFront Origin Access Control (OAC)
+# CloudFront Origin Access Control (OAC) for Secure S3 Access
 resource "aws_cloudfront_origin_access_control" "frontend_oac" {
   name                              = "frontend-oac"
   description                       = "OAC for CloudFront to access S3 bucket securely"
@@ -7,7 +7,27 @@ resource "aws_cloudfront_origin_access_control" "frontend_oac" {
   signing_protocol                  = "sigv4"
 }
 
-# CloudFront Distribution with CORS
+# CloudFront Response Headers Policy for CORS (Presigned Upload Support)
+resource "aws_cloudfront_response_headers_policy" "cors_policy" {
+  name = "ImageResizerCORS"
+
+  cors_config {
+    access_control_allow_origins {
+      items = ["https://image-resizer.fozdigitalz.com"]
+    }
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS", "PUT", "POST"]
+    }
+    access_control_allow_headers {
+      items = ["*"]
+    }
+    access_control_allow_credentials = false
+    access_control_max_age_sec       = 86400
+    origin_override                  = true
+  }
+}
+
+# CloudFront Distribution with CORS & OAC
 resource "aws_cloudfront_distribution" "frontend_distribution" {
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -18,7 +38,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
   enabled             = true
   default_root_object = "index.html"
 
-  aliases = [var.frontend_domain_name]
+  aliases = [var.frontend_domain_name] # Replace with your domain name
 
   default_cache_behavior {
     viewer_protocol_policy = "redirect-to-https"
@@ -28,7 +48,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
     forwarded_values {
       query_string = false
-      headers      = ["Origin"]  # Ensure CORS works by forwarding Origin header
+      headers      = ["Origin", "Authorization"]  # Ensures CORS works by forwarding Origin header
       cookies {
         forward = "none"
       }

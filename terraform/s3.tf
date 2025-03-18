@@ -3,6 +3,19 @@ resource "aws_s3_bucket" "original" {
   bucket = "original-images-bucket-foz"
 }
 
+# S3 CORS Configuration for Presigned Uploads
+resource "aws_s3_bucket_cors_configuration" "original_bucket_cors" { 
+  bucket = aws_s3_bucket.original.id
+
+  cors_rule {
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST"]
+    allowed_origins = ["https://image-resizer.fozdigitalz.com"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 # S3 Bucket for Resized Images
 resource "aws_s3_bucket" "resized" {
   bucket = "resized-images-bucket-foz"
@@ -22,18 +35,7 @@ resource "aws_s3_bucket_website_configuration" "frontend_website" {
   }
 }
 
-# S3 Bucket CORS Configuration (Only Needed for Direct Access)
-resource "aws_s3_bucket_cors_configuration" "original" { 
-  bucket = aws_s3_bucket.original.id
 
-  cors_rule {
-    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST"]  # Allow uploads via presigned URLs
-    allowed_origins = ["https://image-resizer.fozdigitalz.com"]  # Your frontend domain
-    allowed_headers = ["*"]  # Allow all headers (for presigned uploads)
-    expose_headers  = ["ETag"]
-    max_age_seconds = 3000
-  }
-}
 
 
 
