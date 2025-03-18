@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "original" {
 
 #Frontend S3 bucket (Website Hosting Bucket)
 resource "aws_s3_bucket" "frontend" {
-  bucket = "frontend-image-resizer-foz"
+  bucket = "image-resizer.fozdigitalz.com"
 }
 
 # Enable Static Website Hosting for Frontend Bucket
