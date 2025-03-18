@@ -18,26 +18,26 @@
 
     // Event listener for generating presign URL when the field is clicked
     $("#functionUrlPresign").click(async function () {
-        try {
-            // Send request to Lambda presign function to get the presigned URL
-            const response = await $.ajax({
-                url: defaultUrls.presign,
-                method: "GET",
-                success: function (result) {
-                    const presignUrl = result.presignUrl; // Adjust this based on your Lambda's response structure
-                    $("#functionUrlPresign").val(presignUrl); // Populate the field with the generated URL
+        let fileInput = $("#customFile")[0].files[0]; 
+        if (!fileInput) {
+            alert("Please select a file first.");
+            return;
+        }
+        
+        let fileName = encodeURIComponent(fileInput.name);
 
-                    // Optionally store it in localStorage for persistence
-                    localStorage.setItem("functionUrlPresign", presignUrl);
-                },
-                error: function (error) {
-                    console.error("Error generating presign URL:", error);
-                    alert("Failed to generate presign URL.");
-                }
+        try {
+            const response = await $.ajax({
+                url: `${defaultUrls.presign}?fileName=${fileName}`,
+                method: "GET",
             });
+
+            const presignUrl = response.url; 
+            $("#functionUrlPresign").val(presignUrl);
+            localStorage.setItem("functionUrlPresign", presignUrl);
         } catch (error) {
             console.error("Error generating presign URL:", error);
-            alert("Error generating presign URL.");
+            alert("Failed to generate presign URL.");
         }
     });
 
@@ -61,7 +61,6 @@
                     localStorage.setItem(resultElement, funcUrl);
                 };
 
-                // Load URLs for each Lambda function when requested
                 await loadUrl("presign", "functionUrlPresign");
                 await loadUrl("list", "functionUrlList");
                 await loadUrl("delete", "functionUrlDelete");
@@ -73,14 +72,12 @@
                 alert("Error loading function URLs. Check the logs.");
             }
         } else if (action == "save") {
-            // Save URLs to localStorage when Save is clicked
             localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
             localStorage.setItem("functionUrlList", $("#functionUrlList").val());
             localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
             localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
             alert("Configuration saved");
         } else if (action == "clear") {
-            // Clear localStorage and form fields when Clear is clicked
             localStorage.clear();
             $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
             alert("Configuration cleared");
@@ -102,22 +99,14 @@
         }
 
         let functionUrlPresign = $("#functionUrlPresign").val();
-        let functionUrlResize = $("#functionUrlResize").val();
-
         if (!functionUrlPresign) {
-            alert("Please set the function URL for presign Lambda.");
+            alert("Please generate a presigned URL first.");
             return;
         }
-        if (!functionUrlResize) {
-            alert("Please set the function URL for resize Lambda.");
-            return;
-        }
-
-        let resizeOption = $("#resizeOption").val() || "400x400"; // Default resize option
 
         try {
             let response = await $.ajax({
-                url: `${functionUrlResize}?fileName=${encodeURIComponent(file.name)}&size=${resizeOption}`,
+                url: functionUrlPresign,
                 method: "GET"
             });
 
@@ -134,7 +123,6 @@
             });
 
             alert("Upload successful!");
-            updateImageList();
         } catch (error) {
             console.error("Upload error:", error);
             alert("Error uploading file.");
