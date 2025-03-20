@@ -1,4 +1,1 @@
-# Serverless-Image-Resizer
-##
-11
-111
+# AWS Serverless-Image-Resizer
