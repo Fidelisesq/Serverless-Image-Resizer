@@ -1,6 +1,6 @@
 (function ($) {
     // Default API Gateway URLs for each route
-    const apiGatewayBaseUrl = "https://e9emzthm09.execute-api.us-east-1.amazonaws.com/prod";
+    const apiGatewayBaseUrl = "https://h1144tmyfe.execute-api.us-east-1.amazonaws.com/prod";
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
         list: `${apiGatewayBaseUrl}/list`,
