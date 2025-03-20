@@ -1,3 +1,2 @@
 terraform.tfvars
 cleaned_s3.tf
-node_modules/
