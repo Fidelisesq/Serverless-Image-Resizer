@@ -27,36 +27,37 @@
         let fileName = encodeURIComponent(fileInput.name);
 
         try {
-            console.log("Calling API Gateway for Presigned URL:", `${defaultUrls.presign}?fileName=${fileName}`);
+            console.log("🔹 Calling API Gateway for Presigned URL:", `${defaultUrls.presign}?fileName=${fileName}`);
 
             const response = await $.ajax({
                 url: `${defaultUrls.presign}?fileName=${fileName}`,
                 method: "GET",
+                dataType: "json" // Ensures response is parsed as JSON
             });
 
-            console.log("Full API Response from Gateway:", response);
-            console.log("Extracted URL:", response.url);
+            console.log("🔹 Full API Response from Gateway:", response);
 
+            // Validate the response format
             if (!response || typeof response !== "object" || !response.url) {
-                console.error("Invalid response format or missing URL.", response);
+                console.error("❌ Invalid response format or missing URL.", response);
                 alert("Error: Invalid response format or missing URL.");
                 return;
             }
 
             // Ensure UI updates correctly
             $("#functionUrlPresign").val(response.url).trigger("change");
-            console.log("Updated input field with URL:", response.url);
+            console.log("✅ Updated input field with URL:", response.url);
 
             // Copy to clipboard for easy testing
             navigator.clipboard.writeText(response.url).then(() => {
-                console.log("Presigned URL copied to clipboard!");
+                console.log("✅ Presigned URL copied to clipboard!");
             });
 
             // Save to localStorage for persistence
             localStorage.setItem("functionUrlPresign", response.url);
 
         } catch (error) {
-            console.error("Error generating presign URL:", error);
+            console.error("❌ Error generating presign URL:", error);
             alert("Failed to generate presign URL.");
         }
     });
@@ -68,9 +69,9 @@
 
         if (action === "load") {
             try {
-                alert("This feature is not used with API Gateway URLs. Skipping Load.");
+                alert("⚠️ This feature is not used with API Gateway URLs. Skipping Load.");
             } catch (error) {
-                console.error("Error loading function URLs", error);
+                console.error("❌ Error loading function URLs", error);
                 alert("Error loading function URLs. Check the logs.");
             }
         } else if (action === "save") {
@@ -78,13 +79,13 @@
             localStorage.setItem("functionUrlList", $("#functionUrlList").val());
             localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
             localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
-            alert("Configuration saved.");
+            alert("✅ Configuration saved.");
         } else if (action === "clear") {
             localStorage.clear();
             $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
-            alert("Configuration cleared.");
+            alert("✅ Configuration cleared.");
         } else {
-            alert("Unknown action.");
+            alert("❌ Unknown action.");
         }
     });
 
@@ -95,20 +96,20 @@
 
         let file = $("#customFile")[0].files[0];
         if (!file) {
-            alert("Please select a file to upload.");
+            alert("❌ Please select a file to upload.");
             $("#uploadForm button").removeClass('disabled');
             return;
         }
 
         let presignedUrl = $("#functionUrlPresign").val();
         if (!presignedUrl) {
-            alert("Please generate a presigned URL first.");
+            alert("❌ Please generate a presigned URL first.");
             $("#uploadForm button").removeClass('disabled');
             return;
         }
 
         try {
-            console.log("Uploading to Presigned URL:", presignedUrl);
+            console.log("🔹 Uploading to Presigned URL:", presignedUrl);
 
             let response = await fetch(presignedUrl, {
                 method: "PUT",
@@ -119,13 +120,13 @@
             });
 
             if (!response.ok) {
-                throw new Error(`Upload failed with status: ${response.status}`);
+                throw new Error(`❌ Upload failed with status: ${response.status}`);
             }
 
-            alert("Upload successful!");
+            alert("✅ Upload successful!");
         } catch (error) {
-            console.error("Upload error:", error);
-            alert("Error uploading file.");
+            console.error("❌ Upload error:", error);
+            alert("❌ Error uploading file.");
         } finally {
             $("#uploadForm button").removeClass('disabled');
         }
