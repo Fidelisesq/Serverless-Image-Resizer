@@ -27,23 +27,24 @@
         let fileName = encodeURIComponent(fileInput.name);
 
         try {
-            console.log("🔹 Calling API Gateway for Presigned URL:", `${defaultUrls.presign}?fileName=${fileName}`);
+            console.log("Calling API Gateway for Presigned URL:", `${defaultUrls.presign}?fileName=${fileName}`);
 
             const response = await $.ajax({
                 url: `${defaultUrls.presign}?fileName=${fileName}`,
                 method: "GET",
             });
 
-            console.log("Presigned URL Response:", response);
+            console.log("Full API Response from Gateway:", response);
+            console.log("Extracted URL:", response.url);
 
-            if (!response.url) {
-                console.error("❌ No presigned URL received.");
-                alert("Error: No presigned URL received.");
+            if (!response || typeof response !== "object" || !response.url) {
+                console.error("Invalid response format or missing URL.", response);
+                alert("Error: Invalid response format or missing URL.");
                 return;
             }
 
             // Ensure UI updates correctly
-            $("#functionUrlPresign").val(response.url);
+            $("#functionUrlPresign").val(response.url).trigger("change");
             console.log("Updated input field with URL:", response.url);
 
             // Copy to clipboard for easy testing
@@ -55,7 +56,7 @@
             localStorage.setItem("functionUrlPresign", response.url);
 
         } catch (error) {
-            console.error("❌ Error generating presign URL:", error);
+            console.error("Error generating presign URL:", error);
             alert("Failed to generate presign URL.");
         }
     });
@@ -107,7 +108,7 @@
         }
 
         try {
-            console.log("🔹 Uploading to Presigned URL:", presignedUrl);
+            console.log("Uploading to Presigned URL:", presignedUrl);
 
             let response = await fetch(presignedUrl, {
                 method: "PUT",
