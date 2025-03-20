@@ -11,42 +11,22 @@ resource "aws_s3_bucket" "resized" {
   bucket = "resized-images-bucket-foz"
 }
 
-# Disable Public Access Block (Ensures Terraform Can Apply Policies)
-resource "aws_s3_bucket_public_access_block" "frontend_block" {
-  bucket = aws_s3_bucket.frontend.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+# ✅ Fix: Explicitly Define the ARN for Terraform Policy Usage
+locals {
+  frontend_arn = "arn:aws:s3:::image-resizer.fozdigitalz.com"
+  original_arn = "arn:aws:s3:::original-images-bucket-foz"
+  resized_arn  = "arn:aws:s3:::resized-images-bucket-foz"
 }
 
-resource "aws_s3_bucket_public_access_block" "original_block" {
-  bucket = aws_s3_bucket.original.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_public_access_block" "resized_block" {
-  bucket = aws_s3_bucket.resized.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-# Attach Policy to Frontend Bucket (For CloudFront & Uploads)
+# ✅ Fix: Attach Policy to Frontend Bucket (For CloudFront Access Only)
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id  # Attach policy to frontend (CloudFront)
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      # Allow CloudFront to Access & Serve Website (Frontend Bucket)
+
+      # ✅ Allow CloudFront to Access & Serve Website (Frontend Bucket)
       {
         Sid    = "AllowCloudFrontAccessFrontend",
         Effect = "Allow",
@@ -54,21 +34,32 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
           Service = "cloudfront.amazonaws.com"
         },
         Action   = ["s3:GetObject"],
-        Resource = "${aws_s3_bucket.frontend.arn}/*",
+        Resource = "${local.frontend_arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
           }
         }
-      },
+      }
+    ]
+  })
+}
 
-      # Allow Users to Upload via Presigned URL to "original" (Uploads)
+# ✅ Fix: Separate Upload Policy (Attach This to `original` Bucket)
+resource "aws_s3_bucket_policy" "upload_policy" {
+  bucket = aws_s3_bucket.original.id  # ✅ Uploads go to original bucket, NOT frontend
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+
+      # ✅ Allow Users to Upload via Presigned URL to "original" (Uploads)
       {
         Sid    = "AllowPresignedUploadsToOriginal",
         Effect = "Allow",
         Principal = "*",
         Action   = ["s3:PutObject"],
-        Resource = "${aws_s3_bucket.original.arn}/uploads/*",
+        Resource = "${local.original_arn}/uploads/*",
         Condition = {
           StringLike = {
             "aws:Referer" = "https://image-resizer.fozdigitalz.com"
@@ -76,7 +67,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         }
       },
 
-      # Allow API Gateway to Upload to "original"
+      # ✅ Allow API Gateway to Upload to "original"
       {
         Sid    = "AllowAPIGatewayUploadToOriginal",
         Effect = "Allow",
@@ -84,13 +75,13 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
           Service = "apigateway.amazonaws.com"
         },
         Action   = ["s3:PutObject"],
-        Resource = "${aws_s3_bucket.original.arn}/uploads/*"
+        Resource = "${local.original_arn}/uploads/*"
       }
     ]
   })
 }
 
-# Allow CloudFront to Serve Processed Images from "resized"
+# ✅ Fix: Allow CloudFront to Serve Processed Images from "resized"
 resource "aws_s3_bucket_policy" "resized_policy" {
   bucket = aws_s3_bucket.resized.id
 
@@ -104,7 +95,7 @@ resource "aws_s3_bucket_policy" "resized_policy" {
           Service = "cloudfront.amazonaws.com"
         },
         Action   = ["s3:GetObject"],
-        Resource = "${aws_s3_bucket.resized.arn}/*",
+        Resource = "${local.resized_arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
@@ -115,7 +106,7 @@ resource "aws_s3_bucket_policy" "resized_policy" {
   })
 }
 
-# Enable CORS for Uploads & Image Access (Original Bucket)
+# ✅ Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
   bucket = aws_s3_bucket.original.id
 
@@ -128,7 +119,7 @@ resource "aws_s3_bucket_cors_configuration" "original_cors" {
   }
 }
 
-# Enable CORS for Resized Bucket (For CloudFront Access)
+# ✅ Enable CORS for Resized Bucket (For CloudFront Access)
 resource "aws_s3_bucket_cors_configuration" "resized_cors" {
   bucket = aws_s3_bucket.resized.id
 
