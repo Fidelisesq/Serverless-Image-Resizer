@@ -1,8 +1,7 @@
 {
-    "name": "list",
-    "version": "1.0.0",
-    "dependencies": {
-      "aws-sdk": "^2.1043.0"
-    }
+  "name": "list",
+  "version": "1.0.0",
+  "dependencies": {
+      "@aws-sdk/client-s3": "^3.300.0"
   }
-  
+}
