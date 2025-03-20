@@ -1,9 +1,10 @@
-const AWS = require("aws-sdk");
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const s3 = new AWS.S3();
+const s3 = new S3Client({ region: "us-east-1" });
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
 
     const queryParams = event.queryStringParameters || {};
@@ -21,14 +22,13 @@ exports.handler = async (event) => {
         };
     }
 
-    const params = {
+    const command = new PutObjectCommand({
         Bucket: BUCKET_NAME,
-        Key: `uploads/${fileName}`,
-        Expires: 300
-    };
+        Key: `uploads/${fileName}`
+    });
 
     try {
-        const signedUrl = await s3.getSignedUrlPromise("putObject", params);
+        const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
         return {
             statusCode: 200,
