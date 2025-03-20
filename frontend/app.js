@@ -1,5 +1,5 @@
 (function ($) {
-    // Default API Gateway URLs for each route
+    // Default API Gateway URLs
     const apiGatewayBaseUrl = "https://h1144tmyfe.execute-api.us-east-1.amazonaws.com/prod";
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
@@ -8,7 +8,7 @@
         resize: `${apiGatewayBaseUrl}/resize`
     };
 
-    // Do not pre-populate fields initially. Set them as empty
+    // Initialize UI fields
     $("#functionUrlPresign").val("");
     $("#functionUrlList").val("");
     $("#functionUrlDelete").val("");
@@ -16,77 +16,78 @@
 
     let imageItemTemplate = Handlebars.compile($("#image-item-template").html());
 
-    // Event listener for generating presign URL when the field is clicked
+    // Generate Presigned URL & Ensure UI Updates
     $("#functionUrlPresign").click(async function () {
         let fileInput = $("#customFile")[0].files[0]; 
         if (!fileInput) {
             alert("Please select a file first.");
             return;
         }
-        
+
         let fileName = encodeURIComponent(fileInput.name);
 
         try {
+            console.log("🔹 Calling API Gateway for Presigned URL:", `${defaultUrls.presign}?fileName=${fileName}`);
+
             const response = await $.ajax({
                 url: `${defaultUrls.presign}?fileName=${fileName}`,
                 method: "GET",
             });
 
-            const presignUrl = response.url; 
-            $("#functionUrlPresign").val(presignUrl);
-            localStorage.setItem("functionUrlPresign", presignUrl);
+            console.log("Presigned URL Response:", response);
+
+            if (!response.url) {
+                console.error("❌ No presigned URL received.");
+                alert("Error: No presigned URL received.");
+                return;
+            }
+
+            // Ensure UI updates correctly
+            $("#functionUrlPresign").val(response.url);
+            console.log("Updated input field with URL:", response.url);
+
+            // Copy to clipboard for easy testing
+            navigator.clipboard.writeText(response.url).then(() => {
+                console.log("Presigned URL copied to clipboard!");
+            });
+
+            // Save to localStorage for persistence
+            localStorage.setItem("functionUrlPresign", response.url);
+
         } catch (error) {
-            console.error("Error generating presign URL:", error);
+            console.error("❌ Error generating presign URL:", error);
             alert("Failed to generate presign URL.");
         }
     });
 
-    // Handle other buttons like Load, Save, Clear in configForm
+    // Handle Load, Save, Clear Actions in Config Form
     $("#configForm").submit(async function (event) {
         event.preventDefault();
         let action = event.originalEvent.submitter.getAttribute('name');
 
-        if (action == "load") {
+        if (action === "load") {
             try {
-                let baseUrl = `${document.location.protocol}//${document.location.host}`;
-                if (baseUrl.includes("file://")) baseUrl = `http://localhost:4566`;
-
-                const headers = { authorization: "AWS4-HMAC-SHA256 Credential=test/..." };
-
-                const loadUrl = async (funcName, resultElement) => {
-                    const url = `${baseUrl}/2021-10-31/functions/${funcName}/urls`;
-                    const result = await $.ajax({ url, headers }).promise();
-                    const funcUrl = JSON.parse(result).FunctionUrlConfigs[0].FunctionUrl;
-                    $(`#${resultElement}`).val(funcUrl);
-                    localStorage.setItem(resultElement, funcUrl);
-                };
-
-                await loadUrl("presign", "functionUrlPresign");
-                await loadUrl("list", "functionUrlList");
-                await loadUrl("delete", "functionUrlDelete");
-                await loadUrl("resize", "functionUrlResize");
-
-                alert("Function URL configurations loaded");
+                alert("This feature is not used with API Gateway URLs. Skipping Load.");
             } catch (error) {
                 console.error("Error loading function URLs", error);
                 alert("Error loading function URLs. Check the logs.");
             }
-        } else if (action == "save") {
+        } else if (action === "save") {
             localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
             localStorage.setItem("functionUrlList", $("#functionUrlList").val());
             localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
             localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
-            alert("Configuration saved");
-        } else if (action == "clear") {
+            alert("Configuration saved.");
+        } else if (action === "clear") {
             localStorage.clear();
             $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
-            alert("Configuration cleared");
+            alert("Configuration cleared.");
         } else {
-            alert("Unknown action");
+            alert("Unknown action.");
         }
     });
 
-    // Upload form logic
+    // Upload Image Using Presigned URL
     $("#uploadForm").submit(async function (event) {
         event.preventDefault();
         $("#uploadForm button").addClass('disabled');
@@ -98,29 +99,27 @@
             return;
         }
 
-        let functionUrlPresign = $("#functionUrlPresign").val();
-        if (!functionUrlPresign) {
+        let presignedUrl = $("#functionUrlPresign").val();
+        if (!presignedUrl) {
             alert("Please generate a presigned URL first.");
+            $("#uploadForm button").removeClass('disabled');
             return;
         }
 
         try {
-            let response = await $.ajax({
-                url: functionUrlPresign,
-                method: "GET"
+            console.log("🔹 Uploading to Presigned URL:", presignedUrl);
+
+            let response = await fetch(presignedUrl, {
+                method: "PUT",
+                body: file,
+                headers: {
+                    "Content-Type": file.type
+                }
             });
 
-            let formData = new FormData();
-            Object.entries(response.fields).forEach(([key, value]) => formData.append(key, value));
-            formData.append("file", file);
-
-            await $.ajax({
-                type: "POST",
-                url: response.url,
-                data: formData,
-                processData: false,
-                contentType: false
-            });
+            if (!response.ok) {
+                throw new Error(`Upload failed with status: ${response.status}`);
+            }
 
             alert("Upload successful!");
         } catch (error) {
