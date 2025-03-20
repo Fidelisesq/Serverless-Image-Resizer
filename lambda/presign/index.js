@@ -1,16 +1,13 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3 = new S3Client({ region: "us-east-1" });
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
 
-    const queryParams = event.queryStringParameters || {};
-    const fileName = queryParams.fileName;
-
-    if (!fileName) {
+    if (!event.queryStringParameters || !event.queryStringParameters.fileName) {
         return {
             statusCode: 400,
             headers: {
@@ -22,12 +19,15 @@ export const handler = async (event) => {
         };
     }
 
-    const command = new PutObjectCommand({
+    const fileName = decodeURIComponent(event.queryStringParameters.fileName);
+    
+    const params = {
         Bucket: BUCKET_NAME,
         Key: `uploads/${fileName}`
-    });
+    };
 
     try {
+        const command = new PutObjectCommand(params);
         const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
         return {
