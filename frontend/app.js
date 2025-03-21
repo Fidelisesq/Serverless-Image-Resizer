@@ -1,5 +1,5 @@
 (function ($) {
-    const apiGatewayBaseUrl = "https://h1144tmyfe.execute-api.us-east-1.amazonaws.com/prod";
+    const apiGatewayBaseUrl = "https://0q9jtq0l4m.execute-api.us-east-1.amazonaws.com/prod";
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
         list: `${apiGatewayBaseUrl}/list`,
@@ -7,6 +7,7 @@
         resize: `${apiGatewayBaseUrl}/resize`
     };
 
+    // Auto-fill Lambda URLs into config inputs
     $(document).ready(function () {
         $("#functionUrlPresign").val(defaultUrls.presign);
         $("#functionUrlList").val(defaultUrls.list);
@@ -14,6 +15,7 @@
         $("#functionUrlResize").val(defaultUrls.resize);
     });
 
+    // Generate Presigned URL
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
         if (!fileInput) return alert("Please select a file first.");
@@ -30,7 +32,7 @@
             if (!response || !response.url) throw new Error("Missing presigned URL");
 
             $("#functionUrlPresign").val(response.url).trigger("change");
-            $("#presignUrlDisplay").val(response.url); // <-- populate display box
+            $("#presignUrlDisplay").val(response.url); // Show URL in new display box
             navigator.clipboard.writeText(response.url);
             localStorage.setItem("functionUrlPresign", response.url);
         } catch (err) {
@@ -39,6 +41,7 @@
         }
     });
 
+    // Upload using Presigned URL
     $("#uploadForm").submit(async function (e) {
         e.preventDefault();
         $("#uploadForm button").addClass("disabled");
@@ -68,6 +71,7 @@
         }
     });
 
+    // Load image list
     $("#loadImageListButton").click(async function () {
         try {
             const response = await fetch(defaultUrls.list);
@@ -95,6 +99,7 @@
         }
     });
 
+    // Delete image handler
     window.deleteImage = async function (fileName) {
         if (!confirm(`Delete image: ${fileName}?`)) return;
 
@@ -115,6 +120,7 @@
         }
     };
 
+    // Save/Clear Config
     $("#configForm").submit(function (e) {
         e.preventDefault();
         const action = e.originalEvent.submitter.name;
@@ -127,8 +133,7 @@
             alert("Config saved.");
         } else if (action === "clear") {
             localStorage.clear();
-            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
-            $("#presignUrlDisplay").val("");
+            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize, #presignUrlDisplay").val("");
             alert("Config cleared.");
         }
     });
