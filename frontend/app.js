@@ -19,20 +19,21 @@
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
         if (!fileInput) return alert("Please select a file first.");
-
+    
         const fileName = encodeURIComponent(fileInput.name);
-
+        const resizeSize = $("#resizeOption").val();  // 🔥 Get selected resize option
+    
         try {
             const response = await $.ajax({
-                url: `${defaultUrls.presign}?fileName=${fileName}`,
+                url: `${defaultUrls.presign}?fileName=${fileName}&resizeSize=${resizeSize}`, // 🔥 Send it to Lambda
                 method: "GET",
                 dataType: "json"
             });
-
+    
             if (!response || !response.url) throw new Error("Missing presigned URL");
-
+    
             $("#functionUrlPresign").val(response.url).trigger("change");
-            $("#presignUrlDisplay").val(response.url); // Show URL in new display box
+            $("#presignUrlDisplay").val(response.url);
             navigator.clipboard.writeText(response.url);
             localStorage.setItem("functionUrlPresign", response.url);
         } catch (err) {
@@ -40,6 +41,7 @@
             alert("Failed to generate presign URL.");
         }
     });
+    
 
     // Upload using Presigned URL
     $("#uploadForm").submit(async function (e) {
