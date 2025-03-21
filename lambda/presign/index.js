@@ -20,14 +20,18 @@ exports.handler = async (event) => {
     }
 
     const fileName = decodeURIComponent(event.queryStringParameters.fileName);
-    
-    const params = {
-        Bucket: BUCKET_NAME,
-        Key: `uploads/${fileName}`
-    };
+    const resizeSize = event.queryStringParameters.resizeSize || "";
 
     try {
-        const command = new PutObjectCommand(params);
+        const command = new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: `uploads/${fileName}`,
+            ContentType: "image/jpeg",
+            Metadata: {
+                "resize-size": resizeSize
+            }
+        });
+
         const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
         return {
