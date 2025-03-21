@@ -63,7 +63,7 @@
                 body: file,
                 headers: {
                     "Content-Type": file.type,
-                    "x-amz-meta-resize-size": resizeSize
+                    //"x-amz-meta-resize-size": resizeSize
                 }
             });
 
