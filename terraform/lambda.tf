@@ -33,6 +33,8 @@ resource "aws_lambda_function" "resize" {
   }
 }
 
+
+
 # Lambda Function for List
 resource "aws_lambda_function" "list" {
   function_name    = "list"

@@ -11,6 +11,8 @@ resource "aws_s3_bucket" "resized" {
   bucket = "resized-images-bucket-foz"
 }
 
+
+
 #Explicitly Define the ARN for Terraform Policy Usage
 locals {
   frontend_arn = "arn:aws:s3:::image-resizer.fozdigitalz.com"
@@ -144,3 +146,26 @@ resource "aws_s3_bucket_cors_configuration" "resized_cors" {
     max_age_seconds = 3000
   }
 }
+
+# Allow S3 to invoke the resize Lambda
+resource "aws_lambda_permission" "allow_s3_to_invoke_resize" {
+  statement_id  = "AllowS3InvokeResize"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.resize.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.original.arn
+}
+
+# Configure S3 event to trigger the resize Lambda
+resource "aws_s3_bucket_notification" "original_upload_notification" {
+  bucket = aws_s3_bucket.original.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.resize.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "uploads/"
+  }
+
+  depends_on = [aws_lambda_permission.allow_s3_to_invoke_resize]
+}
+
