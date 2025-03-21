@@ -20,8 +20,15 @@
           <div class="mb-3">
             <input type="file" class="form-control" id="customFile" accept="image/*" required>
           </div>
-          <div class="d-grid gap-2">
-            <button type="button" class="btn btn-secondary" id="functionUrlPresign">🔐 Generate Presigned URL</button>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6 d-grid">
+              <button type="button" class="btn btn-secondary" id="functionUrlPresign">🔐 Generate Presigned URL</button>
+            </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" id="presignUrlDisplay" placeholder="Presigned URL will appear here" readonly>
+            </div>
+          </div>
+          <div class="d-grid">
             <button type="submit" class="btn btn-success">⬆️ Upload Image</button>
           </div>
         </form>
