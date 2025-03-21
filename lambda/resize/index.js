@@ -10,27 +10,42 @@ exports.handler = async (event) => {
         for (const record of event.Records) {
             const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
 
-            const originalImage = await s3.send(new GetObjectCommand({ Bucket: INPUT_BUCKET, Key: key }));
+            // Fetch original object and metadata
+            const { Body, Metadata } = await s3.send(
+                new GetObjectCommand({ Bucket: INPUT_BUCKET, Key: key })
+            );
 
-            const sizeOptions = [400, 800, 1200]; 
+            const resizeSize = Metadata["resize-size"]; // key will be lowercase by default in AWS
 
-            for (const size of sizeOptions) {
-                const resizedImage = await sharp(await originalImage.Body.transformToByteArray())
-                    .resize(size, size)
-                    .toBuffer();
-
-                await s3.send(new PutObjectCommand({
-                    Bucket: OUTPUT_BUCKET,
-                    Key: `resized-${size}/${key}`,
-                    Body: resizedImage,
-                    ContentType: "image/jpeg"
-                }));
+            if (!resizeSize || !resizeSize.includes("x")) {
+                console.warn(`No valid resize metadata found for ${key}. Skipping.`);
+                continue;
             }
 
-            console.log(`Resized and stored images for: ${key}`);
+            const [width, height] = resizeSize.split("x").map(Number);
+
+            if (!width || !height) {
+                console.warn(`Invalid resize dimensions provided for ${key}: ${resizeSize}`);
+                continue;
+            }
+
+            const resizedImage = await sharp(await Body.transformToByteArray())
+                .resize(width, height)
+                .toBuffer();
+
+            const outputKey = `resized-${width}x${height}/${key}`;
+
+            await s3.send(new PutObjectCommand({
+                Bucket: OUTPUT_BUCKET,
+                Key: outputKey,
+                Body: resizedImage,
+                ContentType: "image/jpeg"
+            }));
+
+            console.log(`✅ Resized ${key} to ${width}x${height} → ${outputKey}`);
         }
     } catch (error) {
-        console.error("Error resizing image:", error);
+        console.error("❌ Error resizing image:", error);
         throw error;
     }
 };
