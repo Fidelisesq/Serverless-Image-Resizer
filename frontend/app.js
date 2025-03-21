@@ -57,11 +57,17 @@
         }
 
         try {
+            const resizeSize = $("#resizeOption").val();
             const response = await fetch(presignedUrl, {
                 method: "PUT",
                 body: file,
-                headers: { "Content-Type": file.type }
+                headers: {
+                    "Content-Type": file.type,
+                    "x-amz-meta-resize-size": resizeSize
+                }
             });
+
+
             if (!response.ok) throw new Error("Upload failed");
             alert("Upload successful!");
         } catch (err) {
