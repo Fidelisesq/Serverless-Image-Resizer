@@ -1,6 +1,5 @@
 (function ($) {
-    // Default API Gateway URLs
-    const apiGatewayBaseUrl = "https://h1144tmyfe.execute-api.us-east-1.amazonaws.com/prod";
+    const apiGatewayBaseUrl = "https://0q9jtq0l4m.execute-api.us-east-1.amazonaws.com/prod";
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
         list: `${apiGatewayBaseUrl}/list`,
@@ -8,21 +7,18 @@
         resize: `${apiGatewayBaseUrl}/resize`
     };
 
-    // Initialize UI fields
-    $("#functionUrlPresign").val("");
-    $("#functionUrlList").val("");
-    $("#functionUrlDelete").val("");
-    $("#functionUrlResize").val("");
-
-    const imageItemTemplate = Handlebars.compile($("#image-item-template").html());
+    // Auto-fill Lambda URLs into config inputs
+    $(document).ready(function () {
+        $("#functionUrlPresign").val(defaultUrls.presign);
+        $("#functionUrlList").val(defaultUrls.list);
+        $("#functionUrlDelete").val(defaultUrls.delete);
+        $("#functionUrlResize").val(defaultUrls.resize);
+    });
 
     // Generate Presigned URL
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
-        if (!fileInput) {
-            alert("Please select a file first.");
-            return;
-        }
+        if (!fileInput) return alert("Please select a file first.");
 
         const fileName = encodeURIComponent(fileInput.name);
 
@@ -33,57 +29,28 @@
                 dataType: "json"
             });
 
-            if (!response || typeof response !== "object" || !response.url) {
-                console.error("Invalid response format or missing URL.", response);
-                alert("Error: Invalid response format or missing URL.");
-                return;
-            }
+            if (!response || !response.url) throw new Error("Missing presigned URL");
 
             $("#functionUrlPresign").val(response.url).trigger("change");
             navigator.clipboard.writeText(response.url);
             localStorage.setItem("functionUrlPresign", response.url);
-        } catch (error) {
-            console.error("Error generating presign URL:", error);
+        } catch (err) {
+            console.error("Presign error:", err);
             alert("Failed to generate presign URL.");
         }
     });
 
-    // Handle Save/Clear in Config Form
-    $("#configForm").submit(async function (event) {
-        event.preventDefault();
-        const action = event.originalEvent.submitter.getAttribute('name');
-
-        if (action === "save") {
-            localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
-            localStorage.setItem("functionUrlList", $("#functionUrlList").val());
-            localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
-            localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
-            alert("Configuration saved.");
-        } else if (action === "clear") {
-            localStorage.clear();
-            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
-            alert("Configuration cleared.");
-        } else {
-            alert("Unknown action.");
-        }
-    });
-
-    // Upload Image Using Presigned URL
-    $("#uploadForm").submit(async function (event) {
-        event.preventDefault();
-        $("#uploadForm button").addClass('disabled');
+    // Upload using Presigned URL
+    $("#uploadForm").submit(async function (e) {
+        e.preventDefault();
+        $("#uploadForm button").addClass("disabled");
 
         const file = $("#customFile")[0].files[0];
-        if (!file) {
-            alert("Please select a file to upload.");
-            $("#uploadForm button").removeClass('disabled');
-            return;
-        }
-
         const presignedUrl = $("#functionUrlPresign").val();
-        if (!presignedUrl) {
-            alert("Please generate a presigned URL first.");
-            $("#uploadForm button").removeClass('disabled');
+
+        if (!file || !presignedUrl) {
+            alert("Missing file or presign URL.");
+            $("#uploadForm button").removeClass("disabled");
             return;
         }
 
@@ -91,94 +58,82 @@
             const response = await fetch(presignedUrl, {
                 method: "PUT",
                 body: file,
-                headers: {
-                    "Content-Type": file.type
-                }
+                headers: { "Content-Type": file.type }
             });
-
-            if (!response.ok) {
-                throw new Error(`Upload failed with status: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error("Upload failed");
             alert("Upload successful!");
-        } catch (error) {
-            console.error("Upload error:", error);
-            alert("Error uploading file.");
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Upload failed.");
         } finally {
-            $("#uploadForm button").removeClass('disabled');
+            $("#uploadForm button").removeClass("disabled");
         }
     });
 
-    // Refresh Image List
-    $("#updateImageListButton").click(async function () {
-        const functionUrlList = $("#functionUrlList").val();
-        if (!functionUrlList) {
-            alert("Please enter the list Lambda URL.");
-            return;
-        }
-
+    // Load image list
+    $("#loadImageListButton").click(async function () {
         try {
-            const response = await fetch(functionUrlList);
+            const response = await fetch(defaultUrls.list);
             const images = await response.json();
-
-            const container = $("#imagesContainer");
-            container.empty();
+            const container = $("#imagesContainer").empty();
 
             if (!Array.isArray(images) || images.length === 0) {
                 container.append("<p>No images found.</p>");
                 return;
             }
 
-            images.forEach(image => {
+            images.forEach(img => {
                 const context = {
-                    Name: image.Name,
+                    Name: img.Name,
                     Timestamp: new Date().toLocaleString(),
-                    Original: {
-                        URL: image.URL,
-                        Size: "Unknown"
-                    },
-                    Resized: {
-                        URL: image.URL.replace("original", "resized"), // adjust logic if needed
-                        Size: "Unknown"
-                    }
+                    Original: { URL: img.URL },
+                    Resized: { URL: img.URL.replace("original", "resized") }
                 };
-                container.append(imageItemTemplate(context));
+                const html = Handlebars.compile($("#image-item-template").html())(context);
+                container.append(html);
             });
-        } catch (error) {
-            console.error("Error loading image list:", error);
-            alert("Could not load image list.");
+        } catch (err) {
+            console.error("List error:", err);
+            alert("Failed to load image list.");
         }
     });
 
-    // Delete Image
+    // Delete image handler
     window.deleteImage = async function (fileName) {
-        const functionUrlDelete = $("#functionUrlDelete").val();
-        if (!functionUrlDelete) {
-            alert("Please enter the delete Lambda URL.");
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to delete ${fileName}?`)) {
-            return;
-        }
+        if (!confirm(`Delete image: ${fileName}?`)) return;
 
         try {
-            const url = new URL(functionUrlDelete);
-            url.searchParams.append("fileName", fileName);
+            const url = new URL(defaultUrls.delete);
+            url.searchParams.set("fileName", fileName);
 
-            const response = await fetch(url, { method: "DELETE" });
-            const result = await response.json();
+            const res = await fetch(url, { method: "DELETE" });
+            const result = await res.json();
 
-            if (response.ok) {
-                alert(result.message || "Image deleted");
-                $("#updateImageListButton").click();
-            } else {
-                throw new Error(result.error || "Unknown error");
-            }
-        } catch (error) {
-            console.error("Error deleting image:", error);
+            if (!res.ok) throw new Error(result.error || "Delete failed");
+
+            alert(result.message || "Image deleted");
+            $("#loadImageListButton").click();
+        } catch (err) {
+            console.error("Delete error:", err);
             alert("Failed to delete image.");
         }
     };
 
+    // Save/Clear Config
+    $("#configForm").submit(function (e) {
+        e.preventDefault();
+        const action = e.originalEvent.submitter.name;
+
+        if (action === "save") {
+            localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
+            localStorage.setItem("functionUrlList", $("#functionUrlList").val());
+            localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
+            localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
+            alert("Config saved.");
+        } else if (action === "clear") {
+            localStorage.clear();
+            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize").val("");
+            alert("Config cleared.");
+        }
+    });
 })(jQuery);

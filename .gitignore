@@ -1,3 +1,4 @@
 terraform.tfvars
 cleaned_s3.tf
-app-1.js
+original-app.js
+original-index.html
