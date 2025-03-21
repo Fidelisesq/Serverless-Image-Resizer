@@ -1,4 +1,4 @@
-# 🚀 Declare the S3 Buckets
+# Declare the S3 Buckets
 resource "aws_s3_bucket" "frontend" {
   bucket = "image-resizer.fozdigitalz.com"
 }
@@ -11,14 +11,15 @@ resource "aws_s3_bucket" "resized" {
   bucket = "resized-images-bucket-foz"
 }
 
-# ✅ Fix: Explicitly Define the ARN for Terraform Policy Usage
+#Explicitly Define the ARN for Terraform Policy Usage
 locals {
   frontend_arn = "arn:aws:s3:::image-resizer.fozdigitalz.com"
   original_arn = "arn:aws:s3:::original-images-bucket-foz"
   resized_arn  = "arn:aws:s3:::resized-images-bucket-foz"
 }
 
-# ✅ Fix: Attach Policy to Frontend Bucket (For CloudFront Access Only)
+
+# Attach Policy to Frontend Bucket (For CloudFront Access Only)
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id  # Attach policy to frontend (CloudFront)
 
@@ -26,7 +27,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
     Version = "2012-10-17",
     Statement = [
 
-      # ✅ Allow CloudFront to Access & Serve Website (Frontend Bucket)
+      # Allow CloudFront to Access & Serve Website (Frontend Bucket)
       {
         Sid    = "AllowCloudFrontAccessFrontend",
         Effect = "Allow",
@@ -45,15 +46,27 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   })
 }
 
-# ✅ Fix: Separate Upload Policy (Attach This to `original` Bucket)
+#Disable block public access for original bucket
+resource "aws_s3_bucket_public_access_block" "original_public_block" {
+  bucket = aws_s3_bucket.original.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+
+# Separate Upload Policy (Attach This to `original` Bucket)
 resource "aws_s3_bucket_policy" "upload_policy" {
-  bucket = aws_s3_bucket.original.id  # ✅ Uploads go to original bucket, NOT frontend
+  bucket = aws_s3_bucket.original.id  # Uploads go to original bucket, NOT frontend
+  depends_on = [aws_s3_bucket_public_access_block.original_public_block]
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
 
-      # ✅ Allow Users to Upload via Presigned URL to "original" (Uploads)
+      # Allow Users to Upload via Presigned URL to "original" (Uploads)
       {
         Sid    = "AllowPresignedUploadsToOriginal",
         Effect = "Allow",
@@ -67,7 +80,7 @@ resource "aws_s3_bucket_policy" "upload_policy" {
         }
       },
 
-      # ✅ Allow API Gateway to Upload to "original"
+      # Allow API Gateway to Upload to "original"
       {
         Sid    = "AllowAPIGatewayUploadToOriginal",
         Effect = "Allow",
@@ -81,7 +94,7 @@ resource "aws_s3_bucket_policy" "upload_policy" {
   })
 }
 
-# ✅ Fix: Allow CloudFront to Serve Processed Images from "resized"
+# Allow CloudFront to Serve Processed Images from "resized"
 resource "aws_s3_bucket_policy" "resized_policy" {
   bucket = aws_s3_bucket.resized.id
 
@@ -106,7 +119,7 @@ resource "aws_s3_bucket_policy" "resized_policy" {
   })
 }
 
-# ✅ Enable CORS for Uploads & Image Access (Original Bucket)
+# Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
   bucket = aws_s3_bucket.original.id
 
@@ -119,7 +132,7 @@ resource "aws_s3_bucket_cors_configuration" "original_cors" {
   }
 }
 
-# ✅ Enable CORS for Resized Bucket (For CloudFront Access)
+# Enable CORS for Resized Bucket (For CloudFront Access)
 resource "aws_s3_bucket_cors_configuration" "resized_cors" {
   bucket = aws_s3_bucket.resized.id
 
