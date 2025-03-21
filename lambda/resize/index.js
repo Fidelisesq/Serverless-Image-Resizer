@@ -1,60 +1,53 @@
-const { S3Client, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
-const sharp = require("sharp");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3 = new S3Client({ region: "us-east-1" });
-const INPUT_BUCKET = process.env.INPUT_BUCKET;
-const OUTPUT_BUCKET = process.env.OUTPUT_BUCKET;
+const BUCKET_NAME = process.env.BUCKET_NAME;
 
 exports.handler = async (event) => {
-    try {
-        for (const record of event.Records) {
-            const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
+    console.log("Event:", JSON.stringify(event));
 
-            console.log(`🔄 Processing file: ${key}`);
+    const queryParams = event.queryStringParameters || {};
+    const fileName = queryParams.fileName;
+    const resizeSize = queryParams.resizeSize;
 
-            // Get original image with metadata
-            const getObjectResponse = await s3.send(new GetObjectCommand({
-                Bucket: INPUT_BUCKET,
-                Key: key
-            }));
+    if (!fileName) {
+        return {
+            statusCode: 400,
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            },
+            body: JSON.stringify({ message: "Missing fileName parameter" })
+        };
+    }
 
-            const metadata = getObjectResponse.Metadata || {};
-            const resizeSize = metadata["resize-size"]; // metadata keys are lowercased
-
-            console.log("📦 Metadata:", metadata);
-
-            if (!resizeSize || !resizeSize.includes("x")) {
-                console.warn(`⚠️ No valid resize metadata found for ${key}. Skipping.`);
-                continue;
-            }
-
-            const [width, height] = resizeSize.split("x").map(Number);
-            if (!width || !height) {
-                console.warn(`⚠️ Invalid resize dimensions in metadata: ${resizeSize}`);
-                continue;
-            }
-
-            console.log(`📐 Resizing to: ${width}x${height}`);
-
-            // Resize using sharp
-            const buffer = await getObjectResponse.Body.transformToByteArray();
-            const resizedImage = await sharp(buffer)
-                .resize(width, height)
-                .toBuffer();
-
-            const outputKey = `resized-${width}x${height}/${key}`;
-
-            await s3.send(new PutObjectCommand({
-                Bucket: OUTPUT_BUCKET,
-                Key: outputKey,
-                Body: resizedImage,
-                ContentType: "image/jpeg"
-            }));
-
-            console.log(`✅ Resized ${key} → ${outputKey}`);
+    const key = `uploads/${fileName}`;
+    const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        ContentType: "image/jpeg", // optional: you can also pass contentType from query param
+        Metadata: {
+            "resize-size": resizeSize || ""
         }
-    } catch (error) {
-        console.error("❌ Resize Lambda error:", error);
-        throw error;
+    });
+
+    try {
+        const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "*"
+            },
+            body: JSON.stringify({ url: signedUrl })
+        };
+    } catch (err) {
+        console.error("Presign error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Failed to generate presigned URL" })
+        };
     }
 };
