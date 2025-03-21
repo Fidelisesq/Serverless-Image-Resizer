@@ -5,9 +5,13 @@ const s3 = new S3Client({ region: "us-east-1" });
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
 exports.handler = async (event) => {
-    console.log("Received event:", JSON.stringify(event, null, 2));
+    console.log("📥 Event:", JSON.stringify(event));
 
-    if (!event.queryStringParameters || !event.queryStringParameters.fileName) {
+    const queryParams = event.queryStringParameters || {};
+    const fileName = queryParams.fileName;
+    const resizeSize = queryParams.resizeSize;
+
+    if (!fileName) {
         return {
             statusCode: 400,
             headers: {
@@ -15,23 +19,22 @@ exports.handler = async (event) => {
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type"
             },
-            body: JSON.stringify({ message: "Missing fileName" })
+            body: JSON.stringify({ message: "Missing fileName parameter" })
         };
     }
 
-    const fileName = decodeURIComponent(event.queryStringParameters.fileName);
-    const resizeSize = event.queryStringParameters.resizeSize || "";
+    const key = `uploads/${fileName}`;
+
+    const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        ContentType: "image/jpeg",
+        Metadata: {
+            "resize-size": resizeSize || ""
+        }
+    });
 
     try {
-        const command = new PutObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: `uploads/${fileName}`,
-            ContentType: "image/jpeg",
-            Metadata: {
-                "resize-size": resizeSize
-            }
-        });
-
         const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
         return {
@@ -44,7 +47,7 @@ exports.handler = async (event) => {
             body: JSON.stringify({ url: signedUrl })
         };
     } catch (err) {
-        console.error("Error generating presigned URL:", err);
+        console.error("❌ Error generating presigned URL:", err);
         return {
             statusCode: 500,
             headers: {
@@ -52,7 +55,7 @@ exports.handler = async (event) => {
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type"
             },
-            body: JSON.stringify({ error: "Internal Server Error" })
+            body: JSON.stringify({ error: "Failed to generate presigned URL" })
         };
     }
 };
