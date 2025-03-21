@@ -20,6 +20,37 @@ resource "aws_iam_policy" "lambda_s3_access" {
     Statement = [
       {
         Effect    = "Allow",
+        Action    = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:DeleteObject"
+        ],
+        Resource  = [
+          "${aws_s3_bucket.original.arn}/*",
+          "${aws_s3_bucket.resized.arn}/*"
+        ]
+      },
+      {
+        Effect    = "Allow",
+        Action    = ["s3:ListBucket"],
+        Resource  = [
+          "${aws_s3_bucket.original.arn}"
+        ]
+      }
+    ]
+  })
+}
+
+
+/*resource "aws_iam_policy" "lambda_s3_access" {
+  name        = "LambdaS3Access"
+  description = "Allows Lambda to read/write S3 objects"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
         Action    = ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl", "s3:ListBucket", "s3:DeleteObject"],
         Resource  = [
           "${aws_s3_bucket.original.arn}/*",
@@ -29,6 +60,7 @@ resource "aws_iam_policy" "lambda_s3_access" {
     ]
   })
 }
+*/
 
 # Attach IAM Policy to Lambda Execution Role
 resource "aws_iam_role_policy_attachment" "attach_lambda_s3_policy" {
