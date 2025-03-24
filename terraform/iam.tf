@@ -73,11 +73,11 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
       },
       Action    = "s3:GetObject",
       Resource  = "${aws_s3_bucket.original.arn}/*",
-      Condition = {
+      /*Condition = {
         StringEquals = {
           "AWS:SourceArn" = aws_cloudfront_distribution.frontend_distribution.arn
         }
-      }
+      }*/
     }]
   })
 }
@@ -94,11 +94,12 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
       },
       Action    = "s3:GetObject",
       Resource  = "${aws_s3_bucket.resized.arn}/*",
-      Condition = {
+      /*Condition = {
         StringEquals = {
           "AWS:SourceArn" = aws_cloudfront_distribution.frontend_distribution.arn
         }
       }
+      */
     }]
   })
 }
