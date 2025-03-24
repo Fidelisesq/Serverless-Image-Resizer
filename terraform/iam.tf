@@ -77,6 +77,7 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
   })
 }
 
+/*
 #Allow only Cloudfront to access resized s3 buckets
 resource "aws_s3_bucket_policy" "resized_bucket_policy" {
   bucket = aws_s3_bucket.resized.id
@@ -92,6 +93,33 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
     }]
   })
 }
+*/
+
+#Allow only Cloudfront to access resized s3 buckets
+resource "aws_s3_bucket_policy" "resized_bucket_policy" {
+  bucket = aws_s3_bucket.resized.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontAccessResizedSecurely",
+        Effect    = "Allow",
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        },
+        Action   = "s3:GetObject",
+        Resource = "${aws_s3_bucket.resized.arn}/*",
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
+          }
+        }
+      }
+    ]
+  })
+}
+
 
 #IAM Role for Terraform to Manage S3
 resource "aws_iam_policy" "s3_admin_policy" {
