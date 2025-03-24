@@ -58,6 +58,16 @@ resource "aws_s3_bucket_public_access_block" "original_public_block" {
   restrict_public_buckets = false
 }
 
+#Disable block public access for resized bucket
+resource "aws_s3_bucket_public_access_block" "resized_public_block" {
+  bucket = aws_s3_bucket.resized.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
 
 # Separate Upload Policy (Attach This to `original` Bucket)
 resource "aws_s3_bucket_policy" "upload_policy" {
