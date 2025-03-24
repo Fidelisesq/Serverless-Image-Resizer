@@ -69,7 +69,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
-  cache_behavior {
+  ordered_cache_behavior {
     path_pattern           = "original/*"
     target_origin_id       = "S3-original"
     viewer_protocol_policy = "redirect-to-https"
@@ -84,7 +84,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     }
   }
 
-  cache_behavior {
+  ordered_cache_behavior {
     path_pattern           = "resized-*/uploads/*"
     target_origin_id       = "S3-resized"
     viewer_protocol_policy = "redirect-to-https"
