@@ -61,22 +61,6 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch" {
 data "aws_caller_identity" "current" {}
 
 
-
-#Allow only Cloudfront to access original s3 buckets
-resource "aws_s3_bucket_policy" "original_bucket_policy" {
-  bucket = aws_s3_bucket.original.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect    = "Allow",
-      Principal = "*",
-      Action    = "s3:GetObject",
-      Resource  = "${aws_s3_bucket.original.arn}/*"
-    }]
-  })
-}
-
-/*
 #Allow only Cloudfront to access original s3 buckets
 resource "aws_s3_bucket_policy" "original_bucket_policy" {
   bucket = aws_s3_bucket.original.id
@@ -88,11 +72,10 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
         Service = "cloudfront.amazonaws.com"
       },
       Action    = "s3:GetObject",
-      Resource  = "${aws_s3_bucket.original.arn}/*"
+      Resource  = "${aws_s3_bucket.original.arn}/*",
     }]
   })
 }
-*/
 
 #Allow only Cloudfront to access resized s3 buckets
 resource "aws_s3_bucket_policy" "resized_bucket_policy" {
