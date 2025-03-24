@@ -27,34 +27,76 @@ resource "aws_cloudfront_response_headers_policy" "cors_policy" {
   }
 }
 
-# CloudFront Distribution with CORS & OAC
+# CloudFront Distribution with origins for frontend, original, and resized buckets
 resource "aws_cloudfront_distribution" "frontend_distribution" {
-  origin {
-    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.frontend.id}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.frontend_oac.id
-  }
-
   enabled             = true
   default_root_object = "index.html"
 
-  aliases = [var.frontend_domain_name] # Replace with your domain name
+  aliases = [var.frontend_domain_name]
+
+  origin {
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "S3-frontend"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend_oac.id
+  }
+
+  origin {
+    domain_name              = aws_s3_bucket.original.bucket_regional_domain_name
+    origin_id                = "S3-original"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend_oac.id
+  }
+
+  origin {
+    domain_name              = aws_s3_bucket.resized.bucket_regional_domain_name
+    origin_id                = "S3-resized"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend_oac.id
+  }
 
   default_cache_behavior {
+    target_origin_id       = "S3-frontend"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-${aws_s3_bucket.frontend.id}"
 
     forwarded_values {
       query_string = false
-      headers      = ["Origin", "Authorization"]  # Ensures CORS works by forwarding Origin header
+      headers      = ["Origin", "Authorization"]
       cookies {
         forward = "none"
       }
     }
 
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
+  }
+
+  cache_behavior {
+    path_pattern           = "original/*"
+    target_origin_id       = "S3-original"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  cache_behavior {
+    path_pattern           = "resized-*/uploads/*"
+    target_origin_id       = "S3-resized"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
   }
 
   viewer_certificate {
