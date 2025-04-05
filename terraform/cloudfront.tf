@@ -69,8 +69,9 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
+  # Match: /uploads/*
   ordered_cache_behavior {
-    path_pattern           = "original/*"
+    path_pattern           = "uploads/*"
     target_origin_id       = "S3-original"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
@@ -82,8 +83,10 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
         forward = "none"
       }
     }
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
+  # Match: /resized-800x600/uploads/* or similar
   ordered_cache_behavior {
     path_pattern           = "resized-*/uploads/*"
     target_origin_id       = "S3-resized"
@@ -97,6 +100,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
         forward = "none"
       }
     }
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
   }
 
   viewer_certificate {
