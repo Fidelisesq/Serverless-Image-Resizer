@@ -88,7 +88,7 @@
 
             images.forEach(img => {
                 const fileName = img.Name;
-                const originalUrl = `${cloudfrontBaseUrl}/uploads/${fileName}`;
+                const originalUrl = `${cloudfrontBaseUrl}/original/uploads/${fileName}`;
                     
                 // Use the selected size to match resized key
                 const selectedSize = $("#resizeOption").val() || "800x600";
