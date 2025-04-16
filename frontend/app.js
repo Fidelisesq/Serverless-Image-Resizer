@@ -111,17 +111,19 @@
     });
 
     window.deleteImage = async function (fileName) {
+        const fullKey = `uploads/${fileName}`; // Reconstruct the correct S3 object key
+    
         if (!confirm(`Delete image: ${fileName}?`)) return;
-
+    
         try {
             const url = new URL(defaultUrls.delete);
-            url.searchParams.set("fileName", fileName);
-
+            url.searchParams.set("fileName", fullKey); // send full path
+    
             const res = await fetch(url, { method: "DELETE" });
             const result = await res.json();
-
+    
             if (!res.ok) throw new Error(result.error || "Delete failed");
-
+    
             alert(result.message || "Image deleted");
             $("#loadImageListButton").click();
         } catch (err) {
@@ -129,6 +131,7 @@
             alert("Failed to delete image.");
         }
     };
+    
 
     $("#configForm").submit(function (e) {
         e.preventDefault();
