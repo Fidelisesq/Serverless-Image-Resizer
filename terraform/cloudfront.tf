@@ -71,7 +71,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
   # Match: /uploads/*
   ordered_cache_behavior {
-    path_pattern           = "original/uploads/*"
+    path_pattern           = "uploads/*"
     target_origin_id       = "S3-original"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
