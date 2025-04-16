@@ -85,16 +85,15 @@
                 return;
             }
 
-
             images.forEach(img => {
-                const fileName = img.Name;
-                const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
+                const s3Key = img.Name;
 
-                    
-                // Use the selected size to match resized key
+                // Extract just the filename from the key: "uploads/Instance-Metrics.png" → "Instance-Metrics.png"
+                const fileName = s3Key.split("/").pop();
+
                 const selectedSize = $("#resizeOption").val() || "800x600";
+                const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
                 const resizedUrl = `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`;
-
 
                 const html = `
                     <div class="image-item">
