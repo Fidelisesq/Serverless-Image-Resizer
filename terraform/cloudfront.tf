@@ -58,6 +58,11 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
 
+    min_ttl = 0
+    default_ttl = 0
+    max_ttl = 1
+    compress = true
+
     forwarded_values {
       query_string = false
       headers      = ["Origin", "Authorization"]
@@ -77,6 +82,11 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
 
+    min_ttl = 0
+    default_ttl = 0
+    max_ttl = 1
+    compress = true
+
     forwarded_values {
       query_string = false
       cookies {
@@ -93,6 +103,11 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
+
+    min_ttl = 0
+    default_ttl = 0
+    max_ttl = 1
+    compress = true
 
     forwarded_values {
       query_string = false
