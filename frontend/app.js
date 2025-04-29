@@ -124,6 +124,10 @@
             if (!response.ok) throw new Error("Upload failed");
             const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
             toast.show();
+            
+            // Clear file input after successful upload
+            $("#customFile").val(""); // Reset file input
+
 
         } catch (err) {
             console.error("Upload error:", err);
