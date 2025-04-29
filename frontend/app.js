@@ -110,6 +110,19 @@
         }
     });
 
+    async function logEvent(imageKey, eventType) {
+        try {
+            await fetch("https://<YOUR-API-GW-URL>/log-event", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageKey, eventType })
+            });
+        } catch (err) {
+            console.warn("Logging event failed:", err);
+        }
+    }
+    
+
     window.deleteImage = async function (fileName) {
         const fullKey = `uploads/${fileName}`; // Reconstruct the correct S3 object key
     
