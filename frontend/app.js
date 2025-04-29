@@ -72,7 +72,7 @@
         });
 
     });
-    
+
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
         if (!fileInput) return alert("Please select a file first.");
@@ -122,7 +122,9 @@
             });
 
             if (!response.ok) throw new Error("Upload failed");
-            alert("Upload successful!");
+            const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
+            toast.show();
+
         } catch (err) {
             console.error("Upload error:", err);
             alert("Upload failed.");

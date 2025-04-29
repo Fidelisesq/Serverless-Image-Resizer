@@ -13,7 +13,6 @@
 
   <!-- Select2 JS -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -33,7 +32,6 @@
               <!-- Options will be populated dynamically by app.js -->
             </select>
           </div>
-          
           <div class="row g-2 mb-3">
             <div class="col-md-6 d-grid">
               <button type="button" class="btn btn-secondary" id="functionUrlPresign">🔐 Generate Presigned URL</button>
@@ -80,7 +78,22 @@
     </script>
   </div>
 
+  <!-- Bootstrap Toast for Success Messages -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="uploadSuccessToast" class="toast text-bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Success</strong>
+        <small>Just now</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        Image uploaded successfully!
+      </div>
+    </div>
+  </div>
+
   <!-- Main JS App -->
   <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
