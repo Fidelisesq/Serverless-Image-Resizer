@@ -107,7 +107,7 @@ resource "aws_s3_bucket_policy" "upload_policy" {
   })
 }
 
-
+/*
 # Allow CloudFront to Serve Processed Images from "resized"
 resource "aws_s3_bucket_policy" "resized_policy" {
   bucket = aws_s3_bucket.resized.id
@@ -132,6 +132,7 @@ resource "aws_s3_bucket_policy" "resized_policy" {
     ]
   })
 }
+*/
 
 
 # Enable CORS for Uploads & Image Access (Original Bucket)
