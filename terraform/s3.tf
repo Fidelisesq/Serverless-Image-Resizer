@@ -20,7 +20,7 @@ locals {
   resized_arn  = "arn:aws:s3:::resized-images-bucket-foz"
 }
 
-/*
+
 # Attach Policy to Frontend Bucket (For CloudFront Access Only)
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id  # Attach policy to frontend (CloudFront)
@@ -38,31 +38,6 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         },
         Action   = ["s3:GetObject"],
         Resource = "${local.frontend_arn}/*",
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
-          }
-        }
-      }
-    ]
-  })
-}
-*/
-#New
-resource "aws_s3_bucket_policy" "resized_policy" {
-  bucket = aws_s3_bucket.resized.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "AllowCloudFrontAccessResized",
-        Effect    = "Allow",
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        },
-        Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.resized.arn}/*",
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
@@ -132,7 +107,7 @@ resource "aws_s3_bucket_policy" "upload_policy" {
   })
 }
 
-/*
+
 # Allow CloudFront to Serve Processed Images from "resized"
 resource "aws_s3_bucket_policy" "resized_policy" {
   bucket = aws_s3_bucket.resized.id
@@ -158,7 +133,6 @@ resource "aws_s3_bucket_policy" "resized_policy" {
   })
 }
 
-*/
 
 # Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {

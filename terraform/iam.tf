@@ -84,7 +84,6 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
 
 
 #Allow only Cloudfront to access resized s3 buckets
-/*
 resource "aws_s3_bucket_policy" "resized_bucket_policy" {
   bucket = aws_s3_bucket.resized.id
 
@@ -108,7 +107,6 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
     ]
   })
 }
-*/
 
 
 #IAM Role for Terraform to Manage S3
