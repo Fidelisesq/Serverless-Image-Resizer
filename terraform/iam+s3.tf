@@ -43,7 +43,6 @@ resource "aws_iam_policy" "lambda_s3_access" {
 }
 
 
-
 # Attach IAM Policy to Lambda Execution Role
 resource "aws_iam_role_policy_attachment" "attach_lambda_s3_policy" {
   policy_arn = aws_iam_policy.lambda_s3_access.arn
@@ -60,7 +59,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch" {
 # Data source to fetch current account info
 data "aws_caller_identity" "current" {}
 
-
+/*
 #Allow only Cloudfront to access original s3 buckets
 resource "aws_s3_bucket_policy" "original_bucket_policy" {
   bucket = aws_s3_bucket.original.id
@@ -81,7 +80,54 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
     }]
   })
 }
+*/
 
+# New Combined policy for original bucket
+resource "aws_s3_bucket_policy" "original_bucket_policy" {
+  bucket = aws_s3_bucket.original.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # CloudFront access to all objects
+      {
+        Effect    = "Allow",
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        },
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.original.arn}/*",
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
+          }
+        }
+      },
+      # Presigned URL uploads (from your upload_policy)
+      {
+        Sid    = "AllowPresignedUploadsToOriginal",
+        Effect = "Allow",
+        Principal = "*",
+        Action   = ["s3:PutObject"],
+        Resource = "${aws_s3_bucket.original.arn}/uploads/*",
+        Condition = {
+          StringLike = {
+            "aws:Referer" = "https://image-resizer.fozdigitalz.com"
+          }
+        }
+      },
+      # API Gateway uploads (from your upload_policy)
+      {
+        Sid    = "AllowAPIGatewayUploadToOriginal",
+        Effect = "Allow",
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        },
+        Action   = ["s3:PutObject"],
+        Resource = "${aws_s3_bucket.original.arn}/uploads/*"
+      }
+    ]
+  })
+}
 
 #Allow only Cloudfront to access resized s3 buckets
 resource "aws_s3_bucket_policy" "resized_bucket_policy" {
@@ -207,7 +253,7 @@ resource "aws_s3_bucket_public_access_block" "resized_public_block" {
   restrict_public_buckets = false
 }
 
-
+/*
 # Separate Upload Policy (Attach This to `original` Bucket)
 resource "aws_s3_bucket_policy" "upload_policy" {
   bucket = aws_s3_bucket.original.id  # Uploads go to original bucket, NOT frontend
@@ -244,7 +290,7 @@ resource "aws_s3_bucket_policy" "upload_policy" {
     ]
   })
 }
-
+*/
 
 # Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
