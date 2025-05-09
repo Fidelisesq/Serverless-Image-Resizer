@@ -59,28 +59,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch" {
 # Data source to fetch current account info
 data "aws_caller_identity" "current" {}
 
-/*
-#Allow only Cloudfront to access original s3 buckets
-resource "aws_s3_bucket_policy" "original_bucket_policy" {
-  bucket = aws_s3_bucket.original.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect    = "Allow",
-      Principal = {
-        Service = "cloudfront.amazonaws.com"
-      },
-      Action    = "s3:GetObject",
-      Resource  = "${aws_s3_bucket.original.arn}/*",
-      Condition = {
-        StringEquals = {
-            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
-        }
-        }
-    }]
-  })
-}
-*/
+
 
 # New Combined policy for original bucket
 resource "aws_s3_bucket_policy" "original_bucket_policy" {
@@ -253,44 +232,7 @@ resource "aws_s3_bucket_public_access_block" "resized_public_block" {
   restrict_public_buckets = false
 }
 
-/*
-# Separate Upload Policy (Attach This to `original` Bucket)
-resource "aws_s3_bucket_policy" "upload_policy" {
-  bucket = aws_s3_bucket.original.id  # Uploads go to original bucket, NOT frontend
-  depends_on = [aws_s3_bucket_public_access_block.original_public_block]
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-
-      # Allow Users to Upload via Presigned URL to "original" (Uploads)
-      {
-        Sid    = "AllowPresignedUploadsToOriginal",
-        Effect = "Allow",
-        Principal = "*",
-        Action   = ["s3:PutObject"],
-        Resource = "${local.original_arn}/uploads/*",
-        Condition = {
-          StringLike = {
-            "aws:Referer" = "https://image-resizer.fozdigitalz.com"
-          }
-        }
-      },
-
-      # Allow API Gateway to Upload to "original"
-      {
-        Sid    = "AllowAPIGatewayUploadToOriginal",
-        Effect = "Allow",
-        Principal = {
-          Service = "apigateway.amazonaws.com"
-        },
-        Action   = ["s3:PutObject"],
-        Resource = "${local.original_arn}/uploads/*"
-      }
-    ]
-  })
-}
-*/
 
 # Enable CORS for Uploads & Image Access (Original Bucket)
 resource "aws_s3_bucket_cors_configuration" "original_cors" {
