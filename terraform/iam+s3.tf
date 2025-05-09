@@ -64,6 +64,7 @@ data "aws_caller_identity" "current" {}
 # New Combined policy for original bucket
 resource "aws_s3_bucket_policy" "original_bucket_policy" {
   bucket = aws_s3_bucket.original.id
+  depends_on = [aws_s3_bucket_public_access_block.original_public_block]
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
