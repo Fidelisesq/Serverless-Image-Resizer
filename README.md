@@ -12,9 +12,9 @@ Here, I'll walk through how I built the solution using AWS services including La
 * **GitHub Actions** for CI/CD
 * A moderate **frontend** using Bootstrap, Select2, and Handlebars.js
 
-In order to keep the lenght of this article moderate, I've keep the project configuration out of this post. Please find them in my ![Github Page](https://github.com/Fidelisesq/Serverless-Image-Resizer)
+In order to keep the lenght of this article moderate, I kept the project configuration out of this post. Please find them in my ![Github Page](https://github.com/Fidelisesq/Serverless-Image-Resizer)
 
-![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png)
+![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png).
 
 ## Project Goals
 
@@ -44,7 +44,7 @@ All of this happens without managing any servers - AWS services handle the scali
 ### Frontend - Hosting, Cloudfront + Custom Domain
 
 
-The frontend is hosted in an S3 bucket with a CloudFront distribution in front of it. I used Route53 customain domain, which route traffic to cloudfront.
+The frontend is hosted in an S3 bucket with a CloudFront distribution to serve it globally. I used Route53 custom domain, which route traffic to cloudfront.
 
 I defined grouped resize sizes dynamically in JavaScript:
 
