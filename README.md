@@ -14,7 +14,7 @@ Here, I'll walk through how I built the solution using AWS services including La
 
 In order to keep the lenght of this article moderate, I've keep the project configuration out of this post. Please find them in my ![Github Page](https://github.com/Fidelisesq/Serverless-Image-Resizer)
 
-[App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png)
+![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png)
 
 ## Project Goals
 
