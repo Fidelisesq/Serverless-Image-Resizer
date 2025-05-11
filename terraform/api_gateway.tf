@@ -25,7 +25,7 @@ resource "aws_apigatewayv2_stage" "prod" {
   }
 }
 
-# Define Lambda Permissions for API Gateway to Invoke Functions
+# Define Unique IDs for Lambda Statement_ID
 resource "random_id" "lambda_suffix" {
   byte_length = 8
 }

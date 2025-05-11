@@ -1,6 +1,8 @@
-# How I Built and Deployed a Serverless Image Resizer on AWS 
+# Serverless Image Resizer on AWS 
 
-In this article, I'll walk through how I built a serverless image resizing application that automatically processes uploaded images to various dimensions. The solution uses AWS services including Lambda, S3, CloudFront, and API Gateway, all deployed with Terraform.
+Need perfect image sizes for social media or websites? My AWS-powered solution does it automatically. Just upload, select dimensions (Instagram, Facebook, etc.), and get optimized versions in seconds—no servers to manage.
+
+Here, I'll walk through how I built the solution using AWS services including Lambda, S3, CloudFront, and API Gateway, all deployed with Terraform.
 
 * **S3** for storing original and resized images
 * **Lambda** with Sharp for dynamic image resizing
@@ -9,6 +11,8 @@ In this article, I'll walk through how I built a serverless image resizing appli
 * **Terraform** for infrastructure as code
 * **GitHub Actions** for CI/CD
 * A moderate **frontend** using Bootstrap, Select2, and Handlebars.js
+
+In order to keep the lenght of this article moderate, I've keep the project configuration out of this post. Please find them in my ![Github Page](https://github.com/Fidelisesq/Serverless-Image-Resizer)
 
 ## Project Goals
 
@@ -20,7 +24,7 @@ I wanted a fast and cost-effective tool that:
 
 All of this happens without managing any servers - AWS services handle the scaling automatically.
 
-## 📂 Architecture
+## Architecture
 
 * **Frontend**: Static HTML/JS/CSS (Bootstrap + Select2 + Handlebars)
 * **Backend**:
@@ -29,22 +33,16 @@ All of this happens without managing any servers - AWS services handle the scali
   * Resizing with Sharp inside Lambda
   * Original/resized image storage in S3
   * CloudFront with OAC for secure, cacheable access
-* **Infra**:
+* **Infrastructure Management**:
 
   * Defined via Terraform
   * Deployed through GitHub Actions
 
-## ⚡ Features
 
-* Upload image with presigned PUT URL
-* Resize image to presets like Instagram Post, Facebook Share, etc.
-* View original and resized images via CloudFront
-* Download resized images
-* Delete any uploaded image
-* Dynamic, grouped dropdowns for resize options
-* Success toasts + file input reset after upload
+### Frontend - Hosting, Cloudfront + Custom Domain
 
-## 📁 Resize Options
+
+The frontend is hosted in an S3 bucket with a CloudFront distribution in front of it. I used Route53 customain domain, which route traffic to cloudfront.
 
 I defined grouped resize sizes dynamically in JavaScript:
 
@@ -72,23 +70,11 @@ const resizeOptionsGrouped = [
 ];
 ```
 
-Select2 was used to enhance the dropdown:
-
-```js
-$("#resizeOption").select2({
-  placeholder: "-- Choose Size --",
-  width: '100%'
-});
-```
-
-## 🏠 Hosting and CloudFront
-
-The frontend is hosted in an S3 bucket with a CloudFront distribution in front of it.
-
-* Used **Origin Access Control (OAC)** to ensure only CloudFront can read from the buckets
+* Also, I used **Origin Access Control (OAC)** to ensure only CloudFront can read from the buckets
 * **Ordered cache behaviors** in CloudFront for different prefixes (`/uploads/`, `/resized-*/uploads/`)
+* I added 3 origins to my Cloudfront distribution - one for the S3 that hosts the frontend, one each for the bucket that keeps the original image upload and the one that stores the resized images.
 
-## ⌚ Caching and Performance
+#### Caching and Performance
 
 I configured CloudFront with very low TTLs to ensure changes show up almost instantly.
 
@@ -100,9 +86,68 @@ max_ttl     = 1
 
 This applies to both the original and resized paths.
 
-## 🚀 CI/CD with GitHub Actions
+## Backend - API Gateway + Lambda
+Here's a concise yet comprehensive backend section for your article, focusing on the API Gateway and Lambda integration:
 
-Deployed with a workflow triggered on push to `main`:
+---
+
+### **Backend: Serverless Power with API Gateway & Lambda**
+
+The backend orchestrates image processing through a seamless AWS serverless stack:
+
+#### **API Gateway: The Traffic Controller**
+- Serves as the single entry point for all frontend requests
+- Configured with CORS to securely allow requests only from your frontend domain
+- Routes requests to specific Lambda functions based on path/verb:
+  ```terraform
+  # Example route definition for Presigm Lambda in Terraform
+  resource "aws_apigatewayv2_route" "presign_route" {
+    api_id = aws_apigatewayv2_api.image_api.id
+    route_key = "GET /presign"  # Routes to presign Lambda
+    target    = "integrations/${aws_apigatewayv2_integration.presign_integration.id}"
+  }
+  ```
+
+#### **Lambda Functions: Specialized Workers**
+Four dedicated functions handle distinct tasks:
+
+1. **Presign Lambda**  
+   - Generates secure S3 upload URLs with metadata
+   ```javascript
+   const signedUrl = await getSignedUrl(s3, putCommand, { expiresIn: 300 });
+   ```
+
+2. **Resize Lambda**  
+   - Triggered by S3 upload events
+   - Uses Sharp to process images to requested dimensions
+   ```javascript
+   await sharp(imageBuffer).resize(width, height).toBuffer();
+   ```
+
+3. **List Lambda**  
+   - Returns all uploaded images for the UI gallery
+   ```javascript
+   const data = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET_NAME }));
+   ```
+
+4. **Delete Lambda**  
+   - Removes images from S3 when requested
+   ```javascript
+   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: fileName }));
+   ```
+
+#### **Key Integration Features**
+- **Zero cold starts**: Configured with provisioned concurrency
+- **Secure communication**: IAM permissions strictly limit API Gateway→Lambda access
+- **Auto-scaling**: Handles spikes in traffic without manual intervention
+
+This serverless approach eliminates infrastructure management while providing enterprise-grade reliability and performance.
+
+--- 
+
+## CI/CD with GitHub Actions
+
+Deployed with a workflow triggered on push to `main`. My workflow can also be manually triggered to run or destroy my infrastructure using Terraform. 
 
 * Applies Terraform
 * Syncs frontend files to the S3 bucket
@@ -114,160 +159,18 @@ Deployed with a workflow triggered on push to `main`:
 ```
 
 ## 🌐 Live Project
-
+Check the application with the URL below.
 > **URL:** [https://image-resizer.fozdigitalz.com](https://image-resizer.fozdigitalz.com)
 
-## ✅ Final Touches
-
-* Bootstrap Toast for upload success:
-
-```js
-const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
-toast.show();
-```
-
-* Clear file input after upload:
-
-```js
-$("#customFile").val("");
-```
-
-## ✨ What I Learned
-
-* Sharp is powerful but packaging for Lambda takes care
-* Use OAC for modern, secure CloudFront-to-S3 setups
-* Encoding and naming are key to avoiding S3 403 errors
-* A little frontend polish goes a long way (toasts, icons, grouped selects)
-* Infrastructure-as-Code + CI/CD saves hours of rebuild time
-
-## 🚜 Next Ideas
-
-* Add image analytics (view/download tracking)
-* Expire resized images after 7 days
-* Admin dashboard with storage usage and event charts
-* Auto-email notifications for expiring objects (SES)
-
-## 🔍 Try It Yourself!
-
-You can find the full source code here:
-👉 [GitHub Repo](#) ← replace this with your repo URL
-
----
-
-If you found this useful or inspiring, leave a ❤️ or comment below — I'd love to see what others build on top of this!
-
-Happy building! 🚀
 
 
-## How the Application Works
-Absolutely — here’s a clear **step-by-step flow of how data moves through your Serverless Image Resizer architecture**:
+#### How to Use the Application
+1. **Open the web app** – Your browser loads files from CloudFront, which fetches them from a secure S3 bucket.  
+2. **Select an image & size** – Choose a file and a preset dimension (e.g., Instagram’s 1080x1080).  
+3. **Request upload URL** – The frontend gets a secure S3 upload link via API Gateway + Lambda.  
+4. **Upload directly to S3** – Your browser sends the image to S3 using the generated link.  
+5. **Auto-resize triggered** – S3 detects the upload, fires a Lambda to resize with Sharp, and saves the result in a resized folder.  
+6. **View/download images** – Click "Load My Images" to see originals/resized versions, delivered via CloudFront and download th resized if you want.  
+7. **Delete anytime** – Hit delete, and a Lambda removes the file from S3.  
 
----
 
-## 🔄 Serverless Image Resizer: Flow of Information
-
----
-
-### 🧍‍♀️ 1. **User Opens Web App (Frontend)**
-
-* Browser loads static files (HTML, JS, CSS) from **CloudFront**.
-* CloudFront fetches the `index.html` and `app.js` from the **frontend S3 bucket** (protected via OAC).
-
----
-
-### 📸 2. **User Selects an Image & Resize Size**
-
-* User selects a file and a predefined resize size (e.g., `1080x1080`) from a dropdown.
-
----
-
-### 🔐 3. **Frontend Requests Presigned Upload URL**
-
-* Frontend makes a **GET request** to:
-
-  ```
-  GET /presign?fileName=<name>&resizeSize=<size>
-  ```
-* This hits **API Gateway**, which routes it to the **Presign Lambda**.
-* The Lambda generates a **presigned S3 PUT URL** for the **original bucket**.
-* Response is returned to the browser.
-
----
-
-### ☁️ 4. **User Uploads Image to S3 via Presigned URL**
-
-* Browser uses `PUT` to upload the file directly to the **original S3 bucket** using the presigned URL.
-* Upload includes metadata indicating the resize size.
-
----
-
-### ⚙️ 5. **S3 Triggers Resize Lambda**
-
-* The **original bucket** is configured with an **S3 event notification** that triggers the **Resize Lambda** on new uploads.
-* The Lambda reads the image, resizes it using **Sharp**, and stores the result in the **resized bucket** under a key like:
-
-  ```
-  resized-1080x1080/uploads/<filename>
-  ```
-
----
-
-### 🌐 6. **User Loads Image List**
-
-* When the user clicks **“Load My Images”**, the frontend calls:
-
-  ```
-  GET /list
-  ```
-* API Gateway routes the call to the **List Lambda**, which returns all object keys from the **original bucket**.
-
----
-
-### 👁️ 7. **User Views or Downloads Images**
-
-* Frontend constructs CloudFront URLs for:
-
-  * Original: `https://<CF_DOMAIN>/uploads/<filename>`
-  * Resized: `https://<CF_DOMAIN>/resized-1080x1080/uploads/<filename>`
-* User clicks to view or download.
-* CloudFront fetches the image from **S3 (original or resized)** using OAC.
-
----
-
-### 🗑️ 8. **User Deletes an Image**
-
-* Frontend calls:
-
-  ```
-  DELETE /delete?fileName=uploads/<filename>
-  ```
-* API Gateway routes to the **Delete Lambda**, which deletes the image from the **original S3 bucket**.
-
----
-
-### 🧑‍💻 9. **Deployment Flow (CI/CD)**
-
-* Push to GitHub triggers GitHub Actions:
-
-  * Terraform is applied to manage infrastructure
-  * Frontend files are synced to the S3 bucket
-  * Secrets are injected via GitHub Secrets (e.g., AWS creds, hosted zone ID)
-
----
-
-## 🧭 Summary of Key Paths
-
-| Flow         | Origin                           | Destination |
-| ------------ | -------------------------------- | ----------- |
-| App Load     | CloudFront → S3 (frontend)       |             |
-| Presign URL  | Frontend → API Gateway → Lambda  |             |
-| Upload       | Browser → S3 (original)          |             |
-| Resize       | S3 event → Lambda → S3 (resized) |             |
-| List Images  | Frontend → API Gateway → Lambda  |             |
-| View Image   | CloudFront → S3 (via OAC)        |             |
-| Delete Image | Frontend → API Gateway → Lambda  |             |
-| CI/CD Deploy | GitHub Actions → AWS             |             |
-
----
-
-Would you like this written as a sequence diagram or flowchart too?
