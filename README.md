@@ -88,11 +88,6 @@ max_ttl     = 1
 
 This applies to both the original and resized paths.
 
-## Backend - API Gateway + Lambda
-Here's a concise yet comprehensive backend section for your article, focusing on the API Gateway and Lambda integration:
-
----
-
 ### **Backend: Serverless Power with API Gateway & Lambda**
 
 The backend orchestrates image processing through a seamless AWS serverless stack:
