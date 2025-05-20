@@ -1,4 +1,5 @@
 # Serverless Image Resizer on AWS 
+![Architecture Diagram](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Serverless%20Diagram.png)
 
 Need perfect image sizes for social media or websites? My AWS-powered solution does it automatically. Just upload, select dimensions (Instagram, Facebook, etc.), and get optimized versions in seconds—no servers to manage.
 
@@ -14,7 +15,6 @@ Here, I'll walk through how I built the solution using AWS services including La
 
 In order to keep the lenght of this article moderate, I kept the project configuration out of this post. Please find them in my ![Github Page](https://github.com/Fidelisesq/Serverless-Image-Resizer)
 
-![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png).
 
 ## Project Goals
 
@@ -159,7 +159,7 @@ Deployed with a workflow triggered on push to `main`. My workflow can also be ma
 Check the application with the URL below.
 > **URL:** [https://image-resizer.fozdigitalz.com](https://image-resizer.fozdigitalz.com)
 
-
+![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png).
 
 #### How to Use the Application
 1. **Open the web app** – Your browser loads files from CloudFront, which fetches them from a secure S3 bucket.  
