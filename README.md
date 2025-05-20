@@ -159,7 +159,7 @@ Deployed with a workflow triggered on push to `main`. My workflow can also be ma
 Check the application with the URL below.
 > **URL:** [https://image-resizer.fozdigitalz.com](https://image-resizer.fozdigitalz.com)
 
-![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png).
+![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png)
 
 #### How to Use the Application
 1. **Open the web app** – Your browser loads files from CloudFront, which fetches them from a secure S3 bucket.  
