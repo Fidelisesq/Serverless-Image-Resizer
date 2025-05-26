@@ -67,7 +67,6 @@
    - S3 bucket policies to restrict access to CloudFront and authorized services
 
 ## Security Considerations
-
 - CloudFront uses Origin Access Control (OAC) to securely access S3 buckets
 - S3 buckets are not directly accessible to the public
 - Presigned URLs are used for secure, time-limited uploads
