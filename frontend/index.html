@@ -13,13 +13,23 @@
 
   <!-- Select2 JS -->
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <style>
+    .card-img-top {
+      height: 200px;
+      object-fit: cover;
+    }
+    .select2-container {
+      width: 100% !important;
+    }
+  </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
     <h2 class="text-center mb-4">Serverless Image Resizer</h2>
 
     <!-- Upload Form -->
-    <div class="card mb-4">
+    <div class="card mb-4 shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Upload an Image</h5>
         <form id="uploadForm">
@@ -48,7 +58,7 @@
     </div>
 
     <!-- Image Actions -->
-    <div class="card mb-4">
+    <div class="card mb-4 shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Manage Uploaded Images</h5>
         <div class="d-grid gap-2">
@@ -63,11 +73,11 @@
     <!-- Image Card Template -->
     <script id="image-item-template" type="text/x-handlebars-template">
       <div class="col-md-4">
-        <div class="card h-100">
+        <div class="card h-100 shadow-sm">
           <img src="{{Original.URL}}" class="card-img-top" alt="{{Name}}">
           <div class="card-body">
-            <h5 class="card-title">{{Name}}</h5>
-            <p class="card-text">Uploaded: {{Timestamp}}</p>
+            <h5 class="card-title text-truncate" title="{{Name}}">{{Name}}</h5>
+            <p class="card-text"><small class="text-muted">Uploaded: {{Timestamp}}</small></p>
             <div class="d-flex justify-content-between">
               <a href="{{Resized.URL}}" class="btn btn-info" target="_blank" download>⬇️ Download Resized</a>
               <button class="btn btn-danger" onclick="deleteImage('{{Name}}')">🗑️ Delete</button>
@@ -78,8 +88,9 @@
     </script>
   </div>
 
-  <!-- Bootstrap Toast for Success Messages -->
+  <!-- Toast Container -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <!-- Upload Success Toast -->
     <div id="uploadSuccessToast" class="toast text-bg-success" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header">
         <strong class="me-auto">Success</strong>
@@ -87,7 +98,31 @@
         <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
       <div class="toast-body">
-        Image uploaded successfully!
+        Image uploaded successfully! Loading image list...
+      </div>
+    </div>
+
+    <!-- Delete Success Toast -->
+    <div id="deleteSuccessToast" class="toast text-bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Success</strong>
+        <small>Just now</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        Image deleted successfully!
+      </div>
+    </div>
+
+    <!-- Clipboard Toast -->
+    <div id="clipboardToast" class="toast text-bg-info" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Info</strong>
+        <small>Just now</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        Presigned URL copied to clipboard!
       </div>
     </div>
   </div>
