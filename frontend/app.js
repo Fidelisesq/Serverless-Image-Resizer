@@ -1,5 +1,5 @@
 (function ($) {
-    const apiGatewayBaseUrl = "https://bl19s75389.execute-api.us-east-1.amazonaws";
+    const apiGatewayBaseUrl = "https://628h8jmbgh.execute-api.us-east-1.amazonaws.com/prod";
     const cloudfrontBaseUrl = "https://image-resizer.fozdigitalz.com";
 
     const resizeOptionsGrouped = [
