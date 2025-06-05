@@ -190,7 +190,8 @@
                     Name: fileName,
                     Timestamp: new Date(img.LastModified).toLocaleString(),
                     Original: {
-                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`
+                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`,
+                        Thumbnail: `${cloudfrontBaseUrl}/resized-150x150/uploads/${encodeURIComponent(fileName)}`
                     },
                     Resized: {
                         URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`
