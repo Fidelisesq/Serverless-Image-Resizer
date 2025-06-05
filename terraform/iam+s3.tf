@@ -137,6 +137,7 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
 
 
 
+
 #IAM Role for Terraform to Manage S3
 resource "aws_iam_policy" "s3_admin_policy" {
   name        = "S3BucketAdminPolicy"
