@@ -148,30 +148,27 @@
                 return;
             }
 
+            const templateSrc = $("#image-item-template").html();
+            const template = Handlebars.compile(templateSrc);
+
             images.forEach(img => {
                 const s3Key = img.Name;
-
-                // Extract just the filename from the key: "uploads/Instance-Metrics.png" → "Instance-Metrics.png"
                 const fileName = s3Key.split("/").pop();
-
                 const selectedSize = $("#resizeOption").val() || "800x600";
+
                 const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
                 const resizedUrl = `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`;
 
-                const html = `
-                    <div class="image-item">
-                        <p><strong>${fileName}</strong></p>
-                        <a href="${originalUrl}" target="_blank">View Original</a> |
-                        <a href="${resizedUrl}" target="_blank">Download Resized</a> |
-                        <a href="#" onclick="deleteImage('${fileName}')">Delete</a>
-                    </div>`;
+                const html = template({
+                    Name: fileName,
+                    Timestamp: new Date().toLocaleString(),  // You can update this if img has real timestamp
+                    Original: { URL: originalUrl },
+                    Resized: { URL: resizedUrl }
+                });
+
                 container.append(html);
             });
-        } catch (err) {
-            console.error("List error:", err);
-            alert("Failed to load image list.");
-        }
-    });
+
 
     async function logEvent(imageKey, eventType) {
         try {
