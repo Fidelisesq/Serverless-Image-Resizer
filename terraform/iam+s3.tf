@@ -109,7 +109,8 @@ resource "aws_s3_bucket_policy" "original_bucket_policy" {
   })
 }
 
-#Allow only Cloudfront to access resized s3 buckets
+
+# New June Allow only Cloudfront to access resized s3 bucket
 resource "aws_s3_bucket_policy" "resized_bucket_policy" {
   bucket = aws_s3_bucket.resized.id
 
@@ -129,6 +130,13 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
             "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
           }
         }
+      },
+      {
+        Sid: "AllowPublicAccessToAllObjectsViaCloudFront",
+        Effect: "Allow",
+        Principal: "*",
+        Action: "s3:GetObject",
+        Resource: "${aws_s3_bucket.resized.arn}/*"
       }
     ]
   })
