@@ -118,29 +118,23 @@ resource "aws_s3_bucket_policy" "resized_bucket_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "AllowCloudFrontAccessResizedSecurely",
-        Effect    = "Allow",
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
+        Sid: "AllowCloudFrontAccessViaOAC",
+        Effect: "Allow",
+        Principal: {
+          Service: "cloudfront.amazonaws.com"
         },
-        Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.resized.arn}/*",
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
+        Action: "s3:GetObject",
+        Resource: "${aws_s3_bucket.resized.arn}/*",
+        Condition: {
+          StringEquals: {
+            "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend_distribution.id}"
           }
         }
-      },
-      {
-        Sid: "AllowPublicAccessToAllObjectsViaCloudFront",
-        Effect: "Allow",
-        Principal: "*",
-        Action: "s3:GetObject",
-        Resource: "${aws_s3_bucket.resized.arn}/*"
       }
     ]
   })
 }
+
 
 
 #IAM Role for Terraform to Manage S3
