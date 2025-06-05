@@ -4,26 +4,27 @@
 
     const resizeOptionsGrouped = [
         {
-            groupName: "Social Media Sizes",
-            options: [
-                { platform: "Instagram 📸", label: "Post", size: "1080x1080" },
-                { platform: "Facebook 📘", label: "Shared Image", size: "1200x630" },
-                { platform: "Twitter/X 🐦", label: "Summary Image", size: "1200x675" },
-                { platform: "LinkedIn 💼", label: "Shared Link Image", size: "1200x627" },
-                { platform: "YouTube ▶️", label: "Thumbnail", size: "1280x720" }
-            ]
+          groupName: "Social Media Sizes",
+          options: [
+            { platform: "Instagram 📸", label: "Post", size: "1080x1080" },
+            { platform: "Facebook 📘", label: "Shared Image", size: "1200x630" },
+            { platform: "Twitter/X 🐦", label: "Summary Image", size: "1200x675" },
+            { platform: "LinkedIn 💼", label: "Shared Link Image", size: "1200x627" },
+            { platform: "YouTube ▶️", label: "Thumbnail", size: "1280x720" }
+          ]
         },
         {
-            groupName: "Standard Sizes",
-            options: [
-                { platform: "Thumbnail 🖼️", label: "", size: "150x150" },
-                { platform: "Small Preview", label: "", size: "320x240" },
-                { platform: "Medium Display", label: "", size: "640x480" },
-                { platform: "Large Display", label: "", size: "800x600" },
-                { platform: "Full HD", label: "", size: "1920x1080" }
-            ]
+          groupName: "Standard Sizes",
+          options: [
+            { platform: "Thumbnail 🖼️", label: "", size: "150x150" },
+            { platform: "Small Preview", label: "", size: "320x240" },
+            { platform: "Medium Display", label: "", size: "640x480" },
+            { platform: "Large Display", label: "", size: "800x600" },
+            { platform: "Full HD", label: "", size: "1920x1080" }
+          ]
         }
-    ];
+      ];
+      
 
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
@@ -39,21 +40,37 @@
         $("#functionUrlResize").val(defaultUrls.resize);
 
         const $resizeSelect = $("#resizeOption");
-        $resizeSelect.empty().append(`<option value="">-- Choose Size --</option>`);
 
+        // Clear existing options
+        $resizeSelect.empty();
+        $resizeSelect.append(`<option value="">-- Choose Size --</option>`);
+
+        // Build grouped options
         resizeOptionsGrouped.forEach(group => {
-            const $group = $(`<optgroup label="${group.groupName}"></optgroup>`);
-            group.options.forEach(opt => {
-                const labelText = opt.label ? `${opt.platform} ${opt.label}` : opt.platform;
-                $group.append(`<option value="${opt.size}">${labelText} (${opt.size})</option>`);
-            });
-            $resizeSelect.append($group);
+        const $group = $(`<optgroup label="${group.groupName}"></optgroup>`);
+        
+        group.options.forEach(opt => {
+            const labelText = opt.label ? `${opt.platform} ${opt.label}` : opt.platform;
+            $group.append(`<option value="${opt.size}">${labelText} (${opt.size})</option>`);
         });
 
-        $resizeSelect.select2({
-            placeholder: "-- Choose Size --",
-            width: '100%'
+        $resizeSelect.append($group);
         });
+
+        // Activate Select2
+        $resizeSelect.select2({
+        placeholder: "-- Choose Size --",
+        width: '100%',
+        templateResult: function (state) {
+            if (!state.id) return state.text;
+            return $('<span>' + state.text + '</span>');
+        },
+        templateSelection: function (state) {
+            if (!state.id) return state.text;
+            return $('<span>' + state.text + '</span>');
+        }
+        });
+
     });
 
     $("#functionUrlPresign").click(async function () {
@@ -105,11 +122,14 @@
             });
 
             if (!response.ok) throw new Error("Upload failed");
-
             const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
             toast.show();
+            
+            // Clear file input after successful upload
+            $("#customFile").val(""); // Reset file input
+            // Refresh the image list to show the new upload
+            $("#loadImageListButton").click();
 
-            $("#customFile").val("");
         } catch (err) {
             console.error("Upload error:", err);
             alert("Upload failed.");
@@ -129,25 +149,28 @@
                 return;
             }
 
-            const templateSrc = $("#image-item-template").html();
-            const template = Handlebars.compile(templateSrc);
-
+            // Get the template from index.html
+            const template = Handlebars.compile($("#image-item-template").html());
+            
             images.forEach(img => {
                 const s3Key = img.Name;
                 const fileName = s3Key.split("/").pop();
                 const selectedSize = $("#resizeOption").val() || "800x600";
-
-                const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
-                const resizedUrl = `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`;
-
-                const html = template({
+                
+                // Create the data object for the template
+                const templateData = {
                     Name: fileName,
-                    Timestamp: new Date().toLocaleString(),
-                    Original: { URL: originalUrl },
-                    Resized: { URL: resizedUrl }
-                });
-
-                container.append(html);
+                    Timestamp: new Date(img.LastModified).toLocaleString(),
+                    Original: {
+                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`
+                    },
+                    Resized: {
+                        URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`
+                    }
+                };
+                
+                // Render the template with data and append to container
+                container.append(template(templateData));
             });
         } catch (err) {
             console.error("List error:", err);
@@ -166,20 +189,22 @@
             console.warn("Logging event failed:", err);
         }
     }
+    
 
     window.deleteImage = async function (fileName) {
-        const fullKey = `uploads/${fileName}`;
+        const fullKey = `uploads/${fileName}`; // Reconstruct the correct S3 object key
+    
         if (!confirm(`Delete image: ${fileName}?`)) return;
-
+    
         try {
             const url = new URL(defaultUrls.delete);
-            url.searchParams.set("fileName", fullKey);
-
+            url.searchParams.set("fileName", fullKey); // send full path
+    
             const res = await fetch(url, { method: "DELETE" });
             const result = await res.json();
-
+    
             if (!res.ok) throw new Error(result.error || "Delete failed");
-
+    
             alert(result.message || "Image deleted");
             $("#loadImageListButton").click();
         } catch (err) {
@@ -187,6 +212,7 @@
             alert("Failed to delete image.");
         }
     };
+    
 
     $("#configForm").submit(function (e) {
         e.preventDefault();
