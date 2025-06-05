@@ -39,6 +39,33 @@
         $("#functionUrlDelete").val(defaultUrls.delete);
         $("#functionUrlResize").val(defaultUrls.resize);
 
+        // Add image preview functionality
+        $("#customFile").on("change", function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create preview container if it doesn't exist
+                    let previewContainer = $("#previewContainer");
+                    if (previewContainer.length === 0) {
+                        const previewHtml = `
+                            <div class="mb-3" id="previewContainer">
+                                <img id="imagePreview" class="img-fluid rounded" style="max-height: 300px;" alt="Image preview">
+                            </div>`;
+                        $(this).closest(".mb-3").after(previewHtml);
+                        previewContainer = $("#previewContainer");
+                    }
+                    
+                    // Update preview image
+                    $("#imagePreview").attr("src", e.target.result);
+                    previewContainer.show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $("#previewContainer").hide();
+            }
+        });
+
         const $resizeSelect = $("#resizeOption");
 
         // Clear existing options
@@ -125,8 +152,9 @@
             const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
             toast.show();
             
-            // Clear file input after successful upload
+            // Clear file input and preview after successful upload
             $("#customFile").val(""); // Reset file input
+            $("#previewContainer").hide(); // Hide the preview
             // Refresh the image list to show the new upload
             $("#loadImageListButton").click();
 
