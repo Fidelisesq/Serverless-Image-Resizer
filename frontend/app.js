@@ -39,33 +39,6 @@
         $("#functionUrlDelete").val(defaultUrls.delete);
         $("#functionUrlResize").val(defaultUrls.resize);
 
-        // Add image preview functionality
-        $("#customFile").on("change", function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Create preview container if it doesn't exist
-                    let previewContainer = $("#previewContainer");
-                    if (previewContainer.length === 0) {
-                        const previewHtml = `
-                            <div class="mb-3" id="previewContainer">
-                                <img id="imagePreview" class="img-fluid rounded" style="max-height: 300px;" alt="Image preview">
-                            </div>`;
-                        $(this).closest(".mb-3").after(previewHtml);
-                        previewContainer = $("#previewContainer");
-                    }
-                    
-                    // Update preview image
-                    $("#imagePreview").attr("src", e.target.result);
-                    previewContainer.show();
-                };
-                reader.readAsDataURL(file);
-            } else {
-                $("#previewContainer").hide();
-            }
-        });
-
         const $resizeSelect = $("#resizeOption");
 
         // Clear existing options
@@ -152,11 +125,9 @@
             const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
             toast.show();
             
-            // Clear file input and preview after successful upload
+            // Clear file input after successful upload
             $("#customFile").val(""); // Reset file input
-            $("#previewContainer").hide(); // Hide the preview
-            // Refresh the image list to show the new upload
-            $("#loadImageListButton").click();
+
 
         } catch (err) {
             console.error("Upload error:", err);
@@ -177,29 +148,24 @@
                 return;
             }
 
-            // Get the template from index.html
-            const template = Handlebars.compile($("#image-item-template").html());
-            
             images.forEach(img => {
                 const s3Key = img.Name;
+
+                // Extract just the filename from the key: "uploads/Instance-Metrics.png" → "Instance-Metrics.png"
                 const fileName = s3Key.split("/").pop();
+
                 const selectedSize = $("#resizeOption").val() || "800x600";
-                
-                // Create the data object for the template
-                const templateData = {
-                    Name: fileName,
-                    Timestamp: new Date(img.LastModified).toLocaleString(),
-                    Original: {
-                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`,
-                        Thumbnail: `${cloudfrontBaseUrl}/resized-150x150/uploads/${encodeURIComponent(fileName)}`
-                    },
-                    Resized: {
-                        URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`
-                    }
-                };
-                
-                // Render the template with data and append to container
-                container.append(template(templateData));
+                const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
+                const resizedUrl = `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`;
+
+                const html = `
+                    <div class="image-item">
+                        <p><strong>${fileName}</strong></p>
+                        <a href="${originalUrl}" target="_blank">View Original</a> |
+                        <a href="${resizedUrl}" target="_blank">Download Resized</a> |
+                        <a href="#" onclick="deleteImage('${fileName}')">Delete</a>
+                    </div>`;
+                container.append(html);
             });
         } catch (err) {
             console.error("List error:", err);
