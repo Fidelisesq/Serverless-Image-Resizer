@@ -8,13 +8,25 @@ exports.handler = async () => {
         const command = new ListObjectsV2Command({ Bucket: BUCKET_NAME });
         const data = await s3.send(command);
 
-        const images = (data.Contents || []).map((item) => ({
-            Name: item.Key,
-            URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
-            LastModified: item.LastModified
-                ? new Date(item.LastModified).toISOString()
-                : null
-        }));
+        const images = (data.Contents || []).map((item) => {
+            let lastModified = null;
+            try {
+                if (item.LastModified) {
+                    const parsedDate = new Date(item.LastModified);
+                    if (!isNaN(parsedDate.getTime())) {
+                        lastModified = parsedDate.toISOString();
+                    }
+                }
+            } catch (err) {
+                console.warn("Failed to parse LastModified for:", item.Key);
+            }
+
+            return {
+                Name: item.Key,
+                URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
+                LastModified: lastModified
+            };
+        });
 
         return {
             statusCode: 200,
