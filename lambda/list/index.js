@@ -11,9 +11,7 @@ exports.handler = async () => {
         const images = (data.Contents || []).map((item) => ({
             Name: item.Key,
             URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
-            LastModified: item.LastModified instanceof Date
-                ? item.LastModified.toISOString()
-                : null
+            LastModified: item.LastModified?.toISOString() || null
         }));
 
         return {
