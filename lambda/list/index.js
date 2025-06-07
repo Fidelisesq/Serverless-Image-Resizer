@@ -10,20 +10,28 @@ exports.handler = async () => {
 
         const images = (data.Contents || []).map((item) => ({
             Name: item.Key,
-            LastModified: item.LastModified.toISOString(),
-            URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`
+            URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
+            LastModified: item.LastModified
+                ? new Date(item.LastModified).toISOString()
+                : null
         }));
 
         return {
             statusCode: 200,
-            headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(images)
         };
     } catch (error) {
         console.error("Error listing images:", error);
         return {
             statusCode: 500,
-            headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({ error: "Internal Server Error", details: error.message })
         };
     }
