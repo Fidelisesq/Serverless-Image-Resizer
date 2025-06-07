@@ -4,27 +4,27 @@
 
     const resizeOptionsGrouped = [
         {
-          groupName: "Social Media Sizes",
-          options: [
-            { platform: "Instagram 📸", label: "Post", size: "1080x1080" },
-            { platform: "Facebook 📘", label: "Shared Image", size: "1200x630" },
-            { platform: "Twitter/X 🐦", label: "Summary Image", size: "1200x675" },
-            { platform: "LinkedIn 💼", label: "Shared Link Image", size: "1200x627" },
-            { platform: "YouTube ▶️", label: "Thumbnail", size: "1280x720" }
-          ]
+            groupName: "Social Media Sizes",
+            options: [
+                { platform: "Instagram 📸", label: "Post", size: "1080x1080" },
+                { platform: "Facebook 📘", label: "Shared Image", size: "1200x630" },
+                { platform: "Twitter/X 🐦", label: "Summary Image", size: "1200x675" },
+                { platform: "LinkedIn 💼", label: "Shared Link Image", size: "1200x627" },
+                { platform: "YouTube ▶️", label: "Thumbnail", size: "1280x720" }
+            ]
         },
         {
-          groupName: "Standard Sizes",
-          options: [
-            { platform: "Thumbnail 🖼️", label: "", size: "150x150" },
-            { platform: "Small Preview", label: "", size: "320x240" },
-            { platform: "Medium Display", label: "", size: "640x480" },
-            { platform: "Large Display", label: "", size: "800x600" },
-            { platform: "Full HD", label: "", size: "1920x1080" }
-          ]
+            groupName: "Standard Sizes",
+            options: [
+                { platform: "Thumbnail 🖼️", label: "", size: "150x150" },
+                { platform: "Small Preview", label: "", size: "320x240" },
+                { platform: "Medium Display", label: "", size: "640x480" },
+                { platform: "Large Display", label: "", size: "800x600" },
+                { platform: "Full HD", label: "", size: "1920x1080" }
+            ]
         }
     ];
-      
+
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
         list: `${apiGatewayBaseUrl}/list`,
@@ -33,63 +33,39 @@
     };
 
     $(document).ready(function () {
-        // Initialize resize options dropdown
         const $resizeSelect = $("#resizeOption");
+        $resizeSelect.empty().append(`<option value="">-- Choose Size --</option>`);
 
-        // Clear existing options
-        $resizeSelect.empty();
-        $resizeSelect.append(`<option value="">-- Choose Size --</option>`);
-
-        // Build grouped options
         resizeOptionsGrouped.forEach(group => {
             const $group = $(`<optgroup label="${group.groupName}"></optgroup>`);
-            
             group.options.forEach(opt => {
                 const labelText = opt.label ? `${opt.platform} ${opt.label}` : opt.platform;
                 $group.append(`<option value="${opt.size}">${labelText} (${opt.size})</option>`);
             });
-
             $resizeSelect.append($group);
         });
 
-        // Activate Select2
         $resizeSelect.select2({
             placeholder: "-- Choose Size --",
             width: '100%',
-            templateResult: function (state) {
-                if (!state.id) return state.text;
-                return $('<span>' + state.text + '</span>');
-            },
-            templateSelection: function (state) {
-                if (!state.id) return state.text;
-                return $('<span>' + state.text + '</span>');
-            }
+            templateResult: state => state.id ? $('<span>' + state.text + '</span>') : state.text,
+            templateSelection: state => state.id ? $('<span>' + state.text + '</span>') : state.text
         });
 
-        // Store selected resize option
-        $resizeSelect.on('change', function() {
+        $resizeSelect.on('change', function () {
             localStorage.setItem('lastSelectedSize', $(this).val());
         });
 
-        // Restore last selected size if available
         const lastSize = localStorage.getItem('lastSelectedSize');
-        if (lastSize) {
-            $resizeSelect.val(lastSize).trigger('change');
-        }
+        if (lastSize) $resizeSelect.val(lastSize).trigger('change');
     });
 
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
-        if (!fileInput) {
-            alert("Please select a file first.");
-            return;
-        }
+        if (!fileInput) return alert("Please select a file first.");
 
         const resizeSize = $("#resizeOption").val();
-        if (!resizeSize) {
-            alert("Please select a resize option first.");
-            return;
-        }
+        if (!resizeSize) return alert("Please select a resize option first.");
 
         const fileName = encodeURIComponent(fileInput.name);
 
@@ -100,16 +76,16 @@
                 dataType: "json"
             });
 
-            if (!response || !response.url) throw new Error("Missing presigned URL");
+            if (!response?.url) throw new Error("Missing presigned URL");
 
             $("#presignUrlDisplay").val(response.url);
             try {
                 await navigator.clipboard.writeText(response.url);
-                const toast = new bootstrap.Toast(document.getElementById('clipboardToast'));
-                toast.show();
+                new bootstrap.Toast(document.getElementById('clipboardToast')).show();
             } catch (clipErr) {
-                console.warn("Could not copy to clipboard:", clipErr);
+                console.warn("Clipboard copy failed:", clipErr);
             }
+
             localStorage.setItem("lastPresignedUrl", response.url);
         } catch (err) {
             console.error("Presign error:", err);
@@ -119,52 +95,40 @@
 
     $("#uploadForm").submit(async function (e) {
         e.preventDefault();
-        
+
         const file = $("#customFile")[0].files[0];
         const presignedUrl = $("#presignUrlDisplay").val();
 
-        if (!file || !presignedUrl) {
-            alert("Please select a file and generate a presigned URL first.");
-            return;
-        }
+        if (!file || !presignedUrl) return alert("Please select a file and generate a presigned URL first.");
 
-        $("#uploadForm button[type='submit']").prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...');
+        const btn = $("#uploadForm button[type='submit']");
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...');
 
         try {
             const response = await fetch(presignedUrl, {
                 method: "PUT",
                 body: file,
-                headers: {
-                    "Content-Type": file.type
-                }
+                headers: { "Content-Type": file.type }
             });
 
             if (!response.ok) throw new Error("Upload failed");
-            
-            const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
-            toast.show();
-            
-            // Clear form
+
+            new bootstrap.Toast(document.getElementById('uploadSuccessToast')).show();
             $("#customFile").val("");
             $("#presignUrlDisplay").val("");
-            
-            // Automatically refresh image list
             setTimeout(() => $("#loadImageListButton").click(), 2000);
 
         } catch (err) {
             console.error("Upload error:", err);
             alert("Upload failed.");
         } finally {
-            $("#uploadForm button[type='submit']").prop('disabled', false)
-                .html('⬆️ Upload Image');
+            btn.prop('disabled', false).html('⬆️ Upload Image');
         }
     });
 
     $("#loadImageListButton").click(async function () {
         const button = $(this);
-        button.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+        button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
 
         try {
             const response = await fetch(defaultUrls.list);
@@ -176,68 +140,56 @@
                 return;
             }
 
-            // Get the template from the script tag
             const templateSource = $("#image-item-template").html();
             const template = Handlebars.compile(templateSource);
-
-            // Get current resize option
             const selectedSize = $("#resizeOption").val() || localStorage.getItem('lastSelectedSize') || "800x600";
 
             images.forEach(img => {
                 const s3Key = img.Name;
                 const fileName = s3Key.split("/").pop();
 
+                const timestamp = !img.LastModified || isNaN(new Date(img.LastModified)) ?
+                    "Unknown" : new Date(img.LastModified).toLocaleString();
+
                 const imageData = {
                     Name: fileName,
-                    Timestamp: new Date(img.LastModified).toLocaleString(),
-                    Original: {
-                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`
-                    },
-                    Resized: {
-                        URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`
-                    }
+                    Timestamp: timestamp,
+                    Original: { URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}` },
+                    Resized: { URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}` }
                 };
 
-                const html = template(imageData);
-                container.append(html);
+                container.append(template(imageData));
             });
         } catch (err) {
             console.error("List error:", err);
             alert("Failed to load image list.");
         } finally {
-            button.prop('disabled', false)
-                .html('📄 Load My Images');
+            button.prop('disabled', false).html('📄 Load My Images');
         }
     });
 
     window.deleteImage = async function (fileName) {
         if (!confirm(`Delete image: ${fileName}?`)) return;
-        
+
         const fullKey = `uploads/${fileName}`;
         const button = $(`button[onclick="deleteImage('${fileName}')"]`);
-        
-        button.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
-    
+        button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
         try {
             const url = new URL(defaultUrls.delete);
             url.searchParams.set("fileName", fullKey);
-    
+
             const res = await fetch(url, { method: "DELETE" });
             const result = await res.json();
-    
-            if (!res.ok) throw new Error(result.error || "Delete failed");
-    
-            const toast = new bootstrap.Toast(document.getElementById('deleteSuccessToast'));
-            toast.show();
-            
-            // Refresh image list
+
+            if (!res.ok || result.error) throw new Error(result.error || "Delete failed");
+
+            new bootstrap.Toast(document.getElementById('deleteSuccessToast')).show();
             $("#loadImageListButton").click();
         } catch (err) {
             console.error("Delete error:", err);
             alert("Failed to delete image.");
-            button.prop('disabled', false)
-                .html('🗑️ Delete');
+            button.prop('disabled', false).html('🗑️ Delete');
         }
     };
 
