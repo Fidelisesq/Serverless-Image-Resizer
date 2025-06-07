@@ -175,7 +175,7 @@
 
     async function logEvent(imageKey, eventType) {
         try {
-            await fetch("https://<YOUR-API-GW-URL>/log-event", {
+            await fetch("https://dna76w1kjc.execute-api.us-east-1.amazonaws.com/prod/log-event", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ imageKey, eventType })
