@@ -157,7 +157,7 @@ Deployed with a workflow triggered on push to `main`. My workflow can also be ma
 
 ## 🌐 Live Project
 Check the application with the URL below.
-> **URL:** [https://image-resizer.fozdigitalz.com](https://image-resizer.fozdigitalz.com)
+> **URL:**[https://image-resizer.fozdigitalz.com](https://image-resizer.fozdigitalz.com)
 
 ![App Home Page](https://github.com/Fidelisesq/Serverless-Image-Resizer/blob/main/Architecture/Application.png)
 
