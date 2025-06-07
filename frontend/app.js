@@ -148,8 +148,25 @@
                 const s3Key = img.Name;
                 const fileName = s3Key.split("/").pop();
 
-                const timestamp = !img.LastModified || isNaN(new Date(img.LastModified)) ?
-                    "Unknown" : new Date(img.LastModified).toLocaleString();
+                // Improved timestamp handling
+                let timestamp = "Unknown";
+                if (img.LastModified) {
+                    try {
+                        // Try parsing as ISO string first
+                        const date = new Date(img.LastModified);
+                        if (!isNaN(date.getTime())) {
+                            timestamp = date.toLocaleString();
+                        } else {
+                            // Try parsing as milliseconds if ISO fails
+                            const dateFromMillis = new Date(parseInt(img.LastModified));
+                            if (!isNaN(dateFromMillis.getTime())) {
+                                timestamp = dateFromMillis.toLocaleString();
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Could not parse date:", img.LastModified);
+                    }
+                }
 
                 const imageData = {
                     Name: fileName,
@@ -180,15 +197,17 @@
             url.searchParams.set("fileName", fullKey);
 
             const res = await fetch(url, { method: "DELETE" });
-            const result = await res.json();
-
-            if (!res.ok || result.error) throw new Error(result.error || "Delete failed");
-
-            new bootstrap.Toast(document.getElementById('deleteSuccessToast')).show();
-            $("#loadImageListButton").click();
+            
+            if (res.ok) {
+                new bootstrap.Toast(document.getElementById('deleteSuccessToast')).show();
+                $("#loadImageListButton").click();
+            } else {
+                const result = await res.json();
+                throw new Error(result.error || "Delete failed");
+            }
         } catch (err) {
             console.error("Delete error:", err);
-            alert("Failed to delete image.");
+            alert("Failed to delete image: " + err.message);
             button.prop('disabled', false).html('🗑️ Delete');
         }
     };
