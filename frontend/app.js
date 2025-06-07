@@ -153,14 +153,17 @@
                 if (img.LastModified) {
                     try {
                         // Try parsing as ISO string first
-                        const date = new Date(img.LastModified);
-                        if (!isNaN(date.getTime())) {
-                            timestamp = date.toLocaleString();
-                        } else {
-                            // Try parsing as milliseconds if ISO fails
-                            const dateFromMillis = new Date(parseInt(img.LastModified));
-                            if (!isNaN(dateFromMillis.getTime())) {
-                                timestamp = dateFromMillis.toLocaleString();
+                        if (typeof img.LastModified === 'string') {
+                            const date = new Date(img.LastModified);
+                            if (!isNaN(date.getTime())) {
+                                timestamp = date.toLocaleString();
+                            }
+                        }
+                        // If that fails, try parsing as number (epoch time)
+                        else if (typeof img.LastModified === 'number') {
+                            const date = new Date(img.LastModified);
+                            if (!isNaN(date.getTime())) {
+                                timestamp = date.toLocaleString();
                             }
                         }
                     } catch (e) {
@@ -186,7 +189,7 @@
     });
 
     window.deleteImage = async function (fileName) {
-        if (!confirm(`Delete image: ${fileName}?`)) return;
+        if (!confirm(`Are you sure you want to delete ${fileName}?`)) return;
 
         const fullKey = `uploads/${fileName}`;
         const button = $(`button[onclick="deleteImage('${fileName}')"]`);
@@ -199,15 +202,62 @@
             const res = await fetch(url, { method: "DELETE" });
             
             if (res.ok) {
-                new bootstrap.Toast(document.getElementById('deleteSuccessToast')).show();
+                // Create and show success toast manually
+                const toastEl = document.createElement('div');
+                toastEl.className = 'toast align-items-center text-white bg-success';
+                toastEl.setAttribute('role', 'alert');
+                toastEl.setAttribute('aria-live', 'assertive');
+                toastEl.setAttribute('aria-atomic', 'true');
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            Image deleted successfully!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(toastEl);
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+                
+                // Remove toast after it hides
+                toastEl.addEventListener('hidden.bs.toast', () => {
+                    toastEl.remove();
+                });
+                
+                // Reload the image list
                 $("#loadImageListButton").click();
             } else {
-                const result = await res.json();
-                throw new Error(result.error || "Delete failed");
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
         } catch (err) {
             console.error("Delete error:", err);
-            alert("Failed to delete image: " + err.message);
+            // Create and show error toast manually
+            const toastEl = document.createElement('div');
+            toastEl.className = 'toast align-items-center text-white bg-danger';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        Failed to delete image (but it might have been deleted)
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toastEl);
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+            
+            // Remove toast after it hides
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
+            
+            // Reload the image list anyway
+            $("#loadImageListButton").click();
+        } finally {
             button.prop('disabled', false).html('🗑️ Delete');
         }
     };
