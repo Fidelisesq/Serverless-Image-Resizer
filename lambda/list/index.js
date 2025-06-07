@@ -8,13 +8,21 @@ exports.handler = async () => {
         const command = new ListObjectsV2Command({ Bucket: BUCKET_NAME });
         const data = await s3.send(command);
 
-        const images = (data.Contents || []).map((item) => ({
-            Name: item.Key,
-            URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
-            LastModified: item.LastModified
-                ? new Date(item.LastModified).toISOString()
-                : null
-        }));
+        const images = (data.Contents || []).map((item) => {
+            let lastModified = null;
+            try {
+                // Safely handle LastModified date conversion
+                lastModified = item.LastModified ? new Date(item.LastModified).toISOString() : null;
+            } catch (dateError) {
+                console.warn("Could not parse LastModified date for", item.Key, dateError);
+            }
+
+            return {
+                Name: item.Key,
+                URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
+                LastModified: lastModified
+            };
+        });
 
         return {
             statusCode: 200,
@@ -32,7 +40,10 @@ exports.handler = async () => {
                 "Access-Control-Allow-Origin": "*", 
                 "Content-Type": "application/json" 
             },
-            body: JSON.stringify({ error: "Internal Server Error", details: error.message })
+            body: JSON.stringify({ 
+                error: "Internal Server Error", 
+                details: error.message 
+            })
         };
     }
 };
