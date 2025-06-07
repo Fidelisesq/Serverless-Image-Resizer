@@ -116,7 +116,9 @@
             new bootstrap.Toast(document.getElementById('uploadSuccessToast')).show();
             $("#customFile").val("");
             $("#presignUrlDisplay").val("");
-            setTimeout(() => $("#loadImageListButton").click(), 2000);
+            
+            // Removed the automatic loading of images after upload
+            // User will need to click "Load My Images" manually
 
         } catch (err) {
             console.error("Upload error:", err);
@@ -148,26 +150,23 @@
                 const s3Key = img.Name;
                 const fileName = s3Key.split("/").pop();
 
-                // Improved timestamp handling
+                // Robust timestamp handling
                 let timestamp = "Unknown";
                 if (img.LastModified) {
                     try {
-                        // Try parsing as ISO string first
-                        if (typeof img.LastModified === 'string') {
-                            const date = new Date(img.LastModified);
-                            if (!isNaN(date.getTime())) {
-                                timestamp = date.toLocaleString();
-                            }
-                        }
-                        // If that fails, try parsing as number (epoch time)
-                        else if (typeof img.LastModified === 'number') {
-                            const date = new Date(img.LastModified);
-                            if (!isNaN(date.getTime())) {
-                                timestamp = date.toLocaleString();
-                            }
+                        // Handle both ISO strings and Unix timestamps
+                        const date = new Date(img.LastModified);
+                        if (!isNaN(date.getTime())) {
+                            timestamp = date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
                         }
                     } catch (e) {
-                        console.warn("Could not parse date:", img.LastModified);
+                        console.warn("Date parsing error:", e);
                     }
                 }
 
@@ -202,7 +201,7 @@
             const res = await fetch(url, { method: "DELETE" });
             
             if (res.ok) {
-                // Create and show success toast manually
+                // Create and show success toast
                 const toastEl = document.createElement('div');
                 toastEl.className = 'toast align-items-center text-white bg-success';
                 toastEl.setAttribute('role', 'alert');
@@ -232,7 +231,7 @@
             }
         } catch (err) {
             console.error("Delete error:", err);
-            // Create and show error toast manually
+            // Create and show error toast
             const toastEl = document.createElement('div');
             toastEl.className = 'toast align-items-center text-white bg-danger';
             toastEl.setAttribute('role', 'alert');
