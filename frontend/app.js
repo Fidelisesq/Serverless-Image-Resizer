@@ -23,9 +23,8 @@
             { platform: "Full HD", label: "", size: "1920x1080" }
           ]
         }
-      ];
+    ];
       
-
     const defaultUrls = {
         presign: `${apiGatewayBaseUrl}/presign`,
         list: `${apiGatewayBaseUrl}/list`,
@@ -34,11 +33,7 @@
     };
 
     $(document).ready(function () {
-        $("#functionUrlPresign").val(defaultUrls.presign);
-        $("#functionUrlList").val(defaultUrls.list);
-        $("#functionUrlDelete").val(defaultUrls.delete);
-        $("#functionUrlResize").val(defaultUrls.resize);
-
+        // Initialize resize options dropdown
         const $resizeSelect = $("#resizeOption");
 
         // Clear existing options
@@ -47,38 +42,56 @@
 
         // Build grouped options
         resizeOptionsGrouped.forEach(group => {
-        const $group = $(`<optgroup label="${group.groupName}"></optgroup>`);
-        
-        group.options.forEach(opt => {
-            const labelText = opt.label ? `${opt.platform} ${opt.label}` : opt.platform;
-            $group.append(`<option value="${opt.size}">${labelText} (${opt.size})</option>`);
-        });
+            const $group = $(`<optgroup label="${group.groupName}"></optgroup>`);
+            
+            group.options.forEach(opt => {
+                const labelText = opt.label ? `${opt.platform} ${opt.label}` : opt.platform;
+                $group.append(`<option value="${opt.size}">${labelText} (${opt.size})</option>`);
+            });
 
-        $resizeSelect.append($group);
+            $resizeSelect.append($group);
         });
 
         // Activate Select2
         $resizeSelect.select2({
-        placeholder: "-- Choose Size --",
-        width: '100%',
-        templateResult: function (state) {
-            if (!state.id) return state.text;
-            return $('<span>' + state.text + '</span>');
-        },
-        templateSelection: function (state) {
-            if (!state.id) return state.text;
-            return $('<span>' + state.text + '</span>');
-        }
+            placeholder: "-- Choose Size --",
+            width: '100%',
+            templateResult: function (state) {
+                if (!state.id) return state.text;
+                return $('<span>' + state.text + '</span>');
+            },
+            templateSelection: function (state) {
+                if (!state.id) return state.text;
+                return $('<span>' + state.text + '</span>');
+            }
         });
 
+        // Store selected resize option
+        $resizeSelect.on('change', function() {
+            localStorage.setItem('lastSelectedSize', $(this).val());
+        });
+
+        // Restore last selected size if available
+        const lastSize = localStorage.getItem('lastSelectedSize');
+        if (lastSize) {
+            $resizeSelect.val(lastSize).trigger('change');
+        }
     });
 
     $("#functionUrlPresign").click(async function () {
         const fileInput = $("#customFile")[0].files[0];
-        if (!fileInput) return alert("Please select a file first.");
+        if (!fileInput) {
+            alert("Please select a file first.");
+            return;
+        }
+
+        const resizeSize = $("#resizeOption").val();
+        if (!resizeSize) {
+            alert("Please select a resize option first.");
+            return;
+        }
 
         const fileName = encodeURIComponent(fileInput.name);
-        const resizeSize = $("#resizeOption").val();
 
         try {
             const response = await $.ajax({
@@ -89,10 +102,15 @@
 
             if (!response || !response.url) throw new Error("Missing presigned URL");
 
-            $("#functionUrlPresign").val(response.url).trigger("change");
             $("#presignUrlDisplay").val(response.url);
-            navigator.clipboard.writeText(response.url);
-            localStorage.setItem("functionUrlPresign", response.url);
+            try {
+                await navigator.clipboard.writeText(response.url);
+                const toast = new bootstrap.Toast(document.getElementById('clipboardToast'));
+                toast.show();
+            } catch (clipErr) {
+                console.warn("Could not copy to clipboard:", clipErr);
+            }
+            localStorage.setItem("lastPresignedUrl", response.url);
         } catch (err) {
             console.error("Presign error:", err);
             alert("Failed to generate presign URL.");
@@ -101,16 +119,17 @@
 
     $("#uploadForm").submit(async function (e) {
         e.preventDefault();
-        $("#uploadForm button").addClass("disabled");
-
+        
         const file = $("#customFile")[0].files[0];
-        const presignedUrl = $("#functionUrlPresign").val();
+        const presignedUrl = $("#presignUrlDisplay").val();
 
         if (!file || !presignedUrl) {
-            alert("Missing file or presign URL.");
-            $("#uploadForm button").removeClass("disabled");
+            alert("Please select a file and generate a presigned URL first.");
             return;
         }
+
+        $("#uploadForm button[type='submit']").prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...');
 
         try {
             const response = await fetch(presignedUrl, {
@@ -122,107 +141,104 @@
             });
 
             if (!response.ok) throw new Error("Upload failed");
+            
             const toast = new bootstrap.Toast(document.getElementById('uploadSuccessToast'));
             toast.show();
             
-            // Clear file input after successful upload
-            $("#customFile").val(""); // Reset file input
-
+            // Clear form
+            $("#customFile").val("");
+            $("#presignUrlDisplay").val("");
+            
+            // Automatically refresh image list
+            setTimeout(() => $("#loadImageListButton").click(), 2000);
 
         } catch (err) {
             console.error("Upload error:", err);
             alert("Upload failed.");
         } finally {
-            $("#uploadForm button").removeClass("disabled");
+            $("#uploadForm button[type='submit']").prop('disabled', false)
+                .html('⬆️ Upload Image');
         }
     });
 
     $("#loadImageListButton").click(async function () {
+        const button = $(this);
+        button.prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+
         try {
             const response = await fetch(defaultUrls.list);
             const images = await response.json();
             const container = $("#imagesContainer").empty();
 
             if (!Array.isArray(images) || images.length === 0) {
-                container.append("<p>No images found.</p>");
+                container.append("<p class='text-center mt-4'>No images found.</p>");
                 return;
             }
 
+            // Get the template from the script tag
+            const templateSource = $("#image-item-template").html();
+            const template = Handlebars.compile(templateSource);
+
+            // Get current resize option
+            const selectedSize = $("#resizeOption").val() || localStorage.getItem('lastSelectedSize') || "800x600";
+
             images.forEach(img => {
                 const s3Key = img.Name;
-
-                // Extract just the filename from the key: "uploads/Instance-Metrics.png" → "Instance-Metrics.png"
                 const fileName = s3Key.split("/").pop();
 
-                const selectedSize = $("#resizeOption").val() || "800x600";
-                const originalUrl = `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`;
-                const resizedUrl = `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`;
+                const imageData = {
+                    Name: fileName,
+                    Timestamp: new Date(img.LastModified).toLocaleString(),
+                    Original: {
+                        URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}`
+                    },
+                    Resized: {
+                        URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}`
+                    }
+                };
 
-                const html = `
-                    <div class="image-item">
-                        <p><strong>${fileName}</strong></p>
-                        <a href="${originalUrl}" target="_blank">View Original</a> |
-                        <a href="${resizedUrl}" target="_blank">Download Resized</a> |
-                        <a href="#" onclick="deleteImage('${fileName}')">Delete</a>
-                    </div>`;
+                const html = template(imageData);
                 container.append(html);
             });
         } catch (err) {
             console.error("List error:", err);
             alert("Failed to load image list.");
+        } finally {
+            button.prop('disabled', false)
+                .html('📄 Load My Images');
         }
     });
 
-    async function logEvent(imageKey, eventType) {
-        try {
-            await fetch("https://dna76w1kjc.execute-api.us-east-1.amazonaws.com/prod/log-event", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ imageKey, eventType })
-            });
-        } catch (err) {
-            console.warn("Logging event failed:", err);
-        }
-    }
-    
-
     window.deleteImage = async function (fileName) {
-        const fullKey = `uploads/${fileName}`; // Reconstruct the correct S3 object key
-    
         if (!confirm(`Delete image: ${fileName}?`)) return;
+        
+        const fullKey = `uploads/${fileName}`;
+        const button = $(`button[onclick="deleteImage('${fileName}')"]`);
+        
+        button.prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
     
         try {
             const url = new URL(defaultUrls.delete);
-            url.searchParams.set("fileName", fullKey); // send full path
+            url.searchParams.set("fileName", fullKey);
     
             const res = await fetch(url, { method: "DELETE" });
             const result = await res.json();
     
             if (!res.ok) throw new Error(result.error || "Delete failed");
     
-            alert(result.message || "Image deleted");
+            const toast = new bootstrap.Toast(document.getElementById('deleteSuccessToast'));
+            toast.show();
+            
+            // Refresh image list
             $("#loadImageListButton").click();
         } catch (err) {
             console.error("Delete error:", err);
             alert("Failed to delete image.");
+            button.prop('disabled', false)
+                .html('🗑️ Delete');
         }
     };
-    
 
-    $("#configForm").submit(function (e) {
-        e.preventDefault();
-        const action = e.originalEvent.submitter.name;
-
-        if (action === "save") {
-            localStorage.setItem("functionUrlPresign", $("#functionUrlPresign").val());
-            localStorage.setItem("functionUrlList", $("#functionUrlList").val());
-            localStorage.setItem("functionUrlDelete", $("#functionUrlDelete").val());
-            localStorage.setItem("functionUrlResize", $("#functionUrlResize").val());
-            alert("Config saved.");
-        } else if (action === "clear") {
-            localStorage.clear();
-            $("#functionUrlPresign, #functionUrlList, #functionUrlDelete, #functionUrlResize, #presignUrlDisplay").val("");
-            alert("Config cleared.");
-        }
-    });
 })(jQuery);

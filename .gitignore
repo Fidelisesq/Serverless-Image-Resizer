@@ -1,6 +1,6 @@
 terraform.tfvars
 cleaned_s3.tf
-original-app.js
+issue-app.js
 original-index.html
 del-resize.zip
 resized_node_modules
