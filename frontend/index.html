@@ -69,8 +69,9 @@
           <div class="card-body">
             <h5 class="card-title">{{Name}}</h5>
             <p class="card-text">Uploaded: {{Timestamp}}</p>
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between flex-wrap gap-2">
               <a href="{{Resized.URL}}" class="btn btn-info" target="_blank" download>⬇️ Download Resized</a>
+              <a href="{{Original.URL}}" class="btn btn-secondary" target="_blank">🔍 View Original</a>
               <button class="btn btn-danger" onclick="deleteImage('{{Name}}')">🗑️ Delete</button>
             </div>
           </div>
