@@ -1,11 +1,5 @@
 terraform.tfvars
-cleaned_s3.tf
-issue-app.js
-original-index.html
-del-resize.zip
-resized_node_modules
-test.html
-preview-app.js
-old-list-index.js
-old-list.zip
+resize_node_modules
 list_node_modules
+resize-index.js
+original-resize.zip

@@ -32,8 +32,13 @@ exports.handler = async (event) => {
             }
 
             const imageBuffer = await getObj.Body.transformToByteArray();
+
             const resizedBuffer = await sharp(imageBuffer)
-                .resize(width, height)
+                .resize(width, height, {
+                    fit: 'inside',                     // Preserve aspect ratio
+                    withoutEnlargement: false,         // Allow upscaling
+                    kernel: sharp.kernel.lanczos3      // High-quality filter
+                })
                 .toBuffer();
 
             const outputKey = `resized-${width}x${height}/${key}`;
