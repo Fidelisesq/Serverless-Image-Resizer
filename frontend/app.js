@@ -264,9 +264,19 @@
 
     window.previewOriginal = function (imageUrl) {
         const imgEl = document.getElementById("previewImage");
+        const modalEl = document.getElementById("imagePreviewModal");
+
+        if (!imgEl || !modalEl) {
+            console.warn("Modal or image not found in DOM.");
+            return;
+        }
+
         imgEl.src = imageUrl;
-        const modal = new bootstrap.Modal(document.getElementById("imagePreviewModal"));
-        modal.show();
+
+        setTimeout(() => {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }, 50);
     };
 
 })(jQuery);
