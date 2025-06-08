@@ -173,6 +173,7 @@
                 const imageData = {
                     Name: fileName,
                     Timestamp: timestamp,
+                    SizeKB: img.Size ? (img.Size / 1024).toFixed(1) : "Unknown",
                     Original: { URL: `${cloudfrontBaseUrl}/uploads/${encodeURIComponent(fileName)}` },
                     Resized: { URL: `${cloudfrontBaseUrl}/resized-${selectedSize}/uploads/${encodeURIComponent(fileName)}` }
                 };
@@ -259,6 +260,13 @@
         } finally {
             button.prop('disabled', false).html('🗑️ Delete');
         }
+    };
+
+    window.previewOriginal = function (imageUrl) {
+        const imgEl = document.getElementById("previewImage");
+        imgEl.src = imageUrl;
+        const modal = new bootstrap.Modal(document.getElementById("imagePreviewModal"));
+        modal.show();
     };
 
 })(jQuery);
