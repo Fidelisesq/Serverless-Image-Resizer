@@ -24,7 +24,8 @@ exports.handler = async () => {
             return {
                 Name: item.Key,
                 URL: `https://${BUCKET_NAME}.s3.amazonaws.com/${item.Key}`,
-                LastModified: lastModified
+                LastModified: lastModified,
+                Size: item.Size || 0  // 
             };
         });
 
