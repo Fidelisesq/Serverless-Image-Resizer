@@ -5,3 +5,4 @@ resize-index.js
 original-resize.zip
 README.md
 infra.dot
+terraform/terraform.tfvars
